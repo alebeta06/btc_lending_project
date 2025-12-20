@@ -1,47 +1,54 @@
-use starknet::ContractAddress;
+use btc_lending_project::{IBTCLendingDispatcher, IBTCLendingDispatcherTrait};
+use snforge_std::{ContractClassTrait, DeclareResultTrait, declare};
+use starknet::{ContractAddress, contract_address_const};
 
-use snforge_std::{declare, ContractClassTrait, DeclareResultTrait};
+fn deploy_lending_contract(wbtc_address: ContractAddress) -> ContractAddress {
+    let contract = declare("BTCLending").unwrap().contract_class();
 
-use btc_lending_project::IHelloStarknetSafeDispatcher;
-use btc_lending_project::IHelloStarknetSafeDispatcherTrait;
-use btc_lending_project::IHelloStarknetDispatcher;
-use btc_lending_project::IHelloStarknetDispatcherTrait;
+    let mut constructor_calldata = ArrayTrait::new();
+    constructor_calldata.append(wbtc_address.into());
+    constructor_calldata.append(8000); // 80% liquidation threshold
+    constructor_calldata.append(0); // high part of u256
 
-fn deploy_contract(name: ByteArray) -> ContractAddress {
-    let contract = declare(name).unwrap().contract_class();
-    let (contract_address, _) = contract.deploy(@ArrayTrait::new()).unwrap();
+    let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
     contract_address
 }
 
 #[test]
-fn test_increase_balance() {
-    let contract_address = deploy_contract("HelloStarknet");
+fn test_health_factor_no_debt() {
+    // Test básico: verificar que sin deuda, el health factor es máximo
+    let mock_wbtc: ContractAddress = contract_address_const::<0x999>();
+    let lending_address = deploy_lending_contract(mock_wbtc);
 
-    let dispatcher = IHelloStarknetDispatcher { contract_address };
+    let user: ContractAddress = contract_address_const::<0x123>();
 
-    let balance_before = dispatcher.get_balance();
-    assert(balance_before == 0, 'Invalid balance');
+    let lending_dispatcher = IBTCLendingDispatcher { contract_address: lending_address };
 
-    dispatcher.increase_balance(42);
-
-    let balance_after = dispatcher.get_balance();
-    assert(balance_after == 42, 'Invalid balance');
+    // Sin deuda, el health factor debe ser máximo
+    let health_factor = lending_dispatcher.calculate_health_factor(user);
+    assert(health_factor == 999_999_999, 'Invalid HF for no debt');
 }
 
 #[test]
-#[feature("safe_dispatcher")]
-fn test_cannot_increase_balance_with_zero_value() {
-    let contract_address = deploy_contract("HelloStarknet");
+fn test_get_user_collateral_initial() {
+    // Test: verificar que el colateral inicial es 0
+    let mock_wbtc: ContractAddress = contract_address_const::<0x888>();
+    let lending_address = deploy_lending_contract(mock_wbtc);
 
-    let safe_dispatcher = IHelloStarknetSafeDispatcher { contract_address };
+    let user: ContractAddress = contract_address_const::<0x456>();
 
-    let balance_before = safe_dispatcher.get_balance().unwrap();
-    assert(balance_before == 0, 'Invalid balance');
+    let lending_dispatcher = IBTCLendingDispatcher { contract_address: lending_address };
 
-    match safe_dispatcher.increase_balance(0) {
-        Result::Ok(_) => core::panic_with_felt252('Should have panicked'),
-        Result::Err(panic_data) => {
-            assert(*panic_data.at(0) == 'Amount cannot be 0', *panic_data.at(0));
-        }
-    };
+    let collateral = lending_dispatcher.get_user_collateral(user);
+    assert(collateral == 0, 'Initial collateral should be 0');
+}
+
+#[test]
+fn test_contract_deployment() {
+    // Test: verificar que el contrato se despliega correctamente
+    let mock_wbtc: ContractAddress = contract_address_const::<0x777>();
+    let lending_address = deploy_lending_contract(mock_wbtc);
+
+    // Si llegamos aquí, el deployment fue exitoso
+    assert(lending_address.into() != 0, 'Deployment failed');
 }
