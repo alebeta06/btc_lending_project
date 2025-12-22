@@ -1,3 +1,9 @@
+// ============================================
+// TESTS DEL CONTRATO BTCLending
+// ============================================
+// Este archivo contiene todos los tests del protocolo de lending
+// Usa Starknet Foundry (snforge) para testing
+
 use btc_lending_project::mocks::erc20_mock::{IERC20MockDispatcher, IERC20MockDispatcherTrait};
 use btc_lending_project::{IBTCLendingDispatcher, IBTCLendingDispatcherTrait};
 use snforge_std::{
@@ -6,25 +12,37 @@ use snforge_std::{
 };
 use starknet::{ContractAddress, contract_address_const};
 
+// ============================================
+// FUNCIONES HELPER PARA DESPLEGAR CONTRATOS
+// ============================================
+
+// Despliega el contrato mock de wBTC
 fn deploy_mock_wbtc() -> ContractAddress {
     let contract = declare("MockWBTC").unwrap().contract_class();
     let (contract_address, _) = contract.deploy(@ArrayTrait::new()).unwrap();
     contract_address
 }
 
+// Despliega el contrato de lending con el wBTC mock
 fn deploy_lending_contract(wbtc_address: ContractAddress) -> ContractAddress {
     let contract = declare("BTCLending").unwrap().contract_class();
 
+    // Preparar datos del constructor
     let mut constructor_calldata = ArrayTrait::new();
-    constructor_calldata.append(wbtc_address.into());
-    constructor_calldata.append(8000); // 80% liquidation threshold
-    constructor_calldata.append(0); // high part of u256
+    constructor_calldata.append(wbtc_address.into()); // Dirección del wBTC
+    constructor_calldata.append(8000); // 80% umbral de liquidación
+    constructor_calldata.append(0); // Parte alta del u256
 
     let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
     contract_address
 }
 
 // ========== TESTS BÁSICOS ==========
+
+// ============================================
+// TEST: Health Factor sin deuda
+// ============================================
+// Verifica que un usuario sin deuda tenga HF = infinito
 
 #[test]
 fn test_health_factor_no_debt() {
@@ -35,9 +53,15 @@ fn test_health_factor_no_debt() {
 
     let lending_dispatcher = IBTCLendingDispatcher { contract_address: lending_address };
 
+    // Sin deuda, HF debe ser muy alto (infinito)
     let health_factor = lending_dispatcher.calculate_health_factor(user);
     assert(health_factor == 999_999_999, 'Invalid HF for no debt');
 }
+
+// ============================================
+// TEST: Colateral inicial
+// ============================================
+// Verifica que un usuario nuevo tenga colateral = 0
 
 #[test]
 fn test_get_user_collateral_initial() {
@@ -48,9 +72,19 @@ fn test_get_user_collateral_initial() {
 
     let lending_dispatcher = IBTCLendingDispatcher { contract_address: lending_address };
 
+    // Usuario nuevo debe tener 0 colateral
     let collateral = lending_dispatcher.get_user_collateral(user);
     assert(collateral == 0, 'Initial collateral should be 0');
 }
+
+// ============================================
+// TEST: Depositar Colateral con Mock ERC20
+// ============================================
+// Este test verifica el flujo completo de depósito:
+// 1. Mintear wBTC al usuario
+// 2. Usuario aprueba el contrato
+// 3. Usuario deposita colateral
+// 4. Verificar que se registró correctamente
 
 // ========== TESTS DE DEPÓSITO CON MOCK ERC20 ==========
 
@@ -86,7 +120,14 @@ fn test_deposit_collateral_with_mock() {
     assert(contract_balance == deposit_amount, 'wBTC not transferred');
 }
 
-// ========== TESTS DE PRÉSTAMO (BORROW) ==========
+// ============================================
+// TEST: Pedir Prestado con Colateral Suficiente
+// ============================================
+// Verifica que un usuario puede pedir prestado si tiene suficiente colateral
+// Escenario: 1 BTC ($60k) de colateral, pide $30k prestado
+// HF esperado: 160 (saludable)
+
+// ========== TESTS DE PRÉSTAMOS (BORROW) ==========
 
 #[test]
 fn test_borrow_with_sufficient_collateral() {
@@ -124,6 +165,12 @@ fn test_borrow_with_sufficient_collateral() {
     assert(health_factor >= 100, 'HF should be >= 1');
 }
 
+// ============================================
+// TEST: Préstamo Falla sin Colateral Suficiente
+// ============================================
+// Verifica que NO se puede pedir más del 80% del colateral
+// Este test DEBE fallar con el mensaje 'Health factor too low'
+
 #[test]
 #[should_panic(expected: ('Health factor too low',))]
 fn test_borrow_fails_with_insufficient_collateral() {
@@ -152,6 +199,16 @@ fn test_borrow_fails_with_insufficient_collateral() {
     lending_dispatcher.borrow(borrow_amount);
     stop_cheat_caller_address(lending_address);
 }
+
+// ============================================
+// TEST: Liquidación Después de Caída de Precio
+// ============================================
+// Este es el test MÁS IMPORTANTE - simula un escenario real:
+// 1. Usuario deposita 1 BTC y pide $40k
+// 2. BTC cae de $60k a $45k
+// 3. HF baja de 120 a 90 (liquidable)
+// 4. Liquidador ejecuta la liquidación
+// 5. Usuario pierde su BTC, liquidador gana $5k
 
 // ========== TESTS DE LIQUIDACIÓN CON CAÍDA DE PRECIO ==========
 
@@ -206,6 +263,12 @@ fn test_liquidation_after_price_drop() {
     assert(liquidator_balance == deposit_amount, 'Liquidator should get BTC');
 }
 
+// ============================================
+// TEST: No Se Puede Liquidar Usuario Saludable
+// ============================================
+// Verifica que un usuario con HF >= 100 NO puede ser liquidado
+// Este test DEBE fallar con el mensaje 'User is healthy'
+
 #[test]
 #[should_panic(expected: ('User is healthy',))]
 fn test_cannot_liquidate_healthy_user() {
@@ -236,6 +299,12 @@ fn test_cannot_liquidate_healthy_user() {
     lending_dispatcher.liquidate(user);
     stop_cheat_caller_address(lending_address);
 }
+
+// ============================================
+// TEST: Health Factor Cambia con el Precio
+// ============================================
+// Verifica que el HF aumenta cuando BTC sube y baja cuando BTC cae
+// Demuestra la relación directa entre precio de BTC y Health Factor
 
 // ========== TEST DE HEALTH FACTOR CON DIFERENTES PRECIOS ==========
 
