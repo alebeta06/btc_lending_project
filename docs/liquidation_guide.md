@@ -15,7 +15,7 @@ Una **liquidación** es cuando alguien (el liquidador) paga la deuda de otra per
 
 ## 🖼️ Visualización del Proceso Completo
 
-![Diagrama del proceso de liquidación](/home/alebeta/.gemini/antigravity/brain/c8f881c8-3572-4cd5-9cf5-309f71a761ad/liquidation_flow_diagram_1766363763351.png)
+![Diagrama del proceso de liquidación](./liquidation_flow_diagram_1766363763351.png)
 
 ---
 
