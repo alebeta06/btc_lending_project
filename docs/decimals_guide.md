@@ -8,9 +8,9 @@ Entender **exactamente** cómo funcionan los números en un protocolo de lending
 
 ## 🖼️ Visualización del Flujo Completo
 
-![Diagrama del flujo de lending](/home/alebeta/.gemini/antigravity/brain/c8f881c8-3572-4cd5-9cf5-309f71a761ad/lending_flow_diagram_1766270520272.png)
+![Diagrama del flujo de lending](./lending_flow_diagram_1766270520272.png)
 
-![Escalas de decimales](/home/alebeta/.gemini/antigravity/brain/c8f881c8-3572-4cd5-9cf5-309f71a761ad/decimals_scale_visual_1766270550981.png)
+![Escalas de decimales](./decimals_scale_visual_1766270550981.png)
 
 ---
 
