@@ -1,5 +1,99 @@
-target
+# ============================================
+# Cairo/Scarb (Backend)
+# ============================================
+target/
+*.lock
+Scarb.lock
 .snfoundry_cache/
 snfoundry_trace/
 coverage/
 profile/
+
+# ============================================
+# Yarn 3 / PnP (Package Manager)
+# ============================================
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# Yarn cache and state
+.pnp.*
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# ============================================
+# Next.js (Frontend)
+# ============================================
+.next/
+out/
+build/
+dist/
+
+# Next.js cache
+.next/cache/
+
+# ============================================
+# Node.js
+# ============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# Environment Variables
+# ============================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+packages/nextjs/.env
+packages/snfoundry/.env
+
+# ============================================
+# IDE
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ============================================
+# OS
+# ============================================
+.DS_Store
+Thumbs.db
+
+# ============================================
+# Logs
+# ============================================
+*.log
+logs/
+
+# ============================================
+# Build artifacts
+# ============================================
+*.sierra
+*.casm
+
+# ============================================
+# Testing
+# ============================================
+coverage/
+.nyc_output/
+
+# ============================================
+# Temporary files
+# ============================================
+tmp/
+temp/
+*.tmp
+
