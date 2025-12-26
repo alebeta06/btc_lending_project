@@ -19,8 +19,8 @@ profile/
 !.yarn/sdks
 !.yarn/versions
 
-# Yarn cache and state
-.pnp.*
+# Yarn cache and state (but keep .pnp.cjs and .pnp.loader.mjs)
+.pnp.data.json
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
