@@ -35,12 +35,12 @@ export function DepositForm() {
     args: address ? [address] : undefined,
   });
 
-  const { writeAsync: approve } = useScaffoldWriteContract({
+  const { sendAsync: approve } = useScaffoldWriteContract({
     contractName: "MockWBTC",
     functionName: "approve",
   });
 
-  const { writeAsync: deposit } = useScaffoldWriteContract({
+  const { sendAsync: deposit } = useScaffoldWriteContract({
     contractName: "BTCLending",
     functionName: "deposit_collateral",
   });

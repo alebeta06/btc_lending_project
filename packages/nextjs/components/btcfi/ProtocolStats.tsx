@@ -12,28 +12,31 @@ import { useScaffoldReadContract } from "~~/hooks/scaffold-stark/useScaffoldRead
  * - Current BTC Price (from oracle)
  */
 export function ProtocolStats() {
-  // For now, we'll show placeholder stats
-  // In a real implementation, you'd aggregate data from multiple users
+  // Note: The oracle price is stored internally in the contract but there's no public getter
+  // In production, you'd add a get_oracle_price() function to the contract
+  // For now, we use the price that was set via set_oracle_price (should be $100,000)
+  const btcPrice = 100000;
   
-  const btcPrice = 100000; // This should come from the oracle
-  const tvl = 0; // Would need to track total deposits
-  const totalBorrowed = 0; // Would need to track total borrows
-  const activePositions = 0; // Would need to track unique users
+  // For now, we'll show placeholder stats for TVL and borrows
+  // In a real implementation, you'd aggregate data from multiple users or add contract functions
+  const tvl = 0; // Would need to track total deposits in contract
+  const totalBorrowed = 0; // Would need to track total borrows in contract
+  const activePositions = 0; // Would need to track unique users in contract
 
   return (
     <div className="card bg-base-100 shadow-xl p-6">
       <h2 className="card-title text-xl mb-4">📊 Protocol Statistics</h2>
 
-      <div className="stats stats-vertical lg:stats-horizontal shadow w-full">
+      <div className="stats stats-vertical lg:stats-horizontal shadow w-full bg-base-200">
         <div className="stat">
           <div className="stat-figure text-primary">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
             </svg>
           </div>
-          <div className="stat-title">BTC Price</div>
-          <div className="stat-value text-primary">${btcPrice.toLocaleString()}</div>
-          <div className="stat-desc">From Oracle</div>
+          <div className="stat-title opacity-70">BTC Price</div>
+          <div className="stat-value text-2xl lg:text-4xl font-bold">${btcPrice.toLocaleString()}</div>
+          <div className="stat-desc opacity-60">From Oracle</div>
         </div>
 
         <div className="stat">
@@ -42,9 +45,9 @@ export function ProtocolStats() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
             </svg>
           </div>
-          <div className="stat-title">Total Value Locked</div>
-          <div className="stat-value text-secondary">${tvl.toLocaleString()}</div>
-          <div className="stat-desc">Across all users</div>
+          <div className="stat-title opacity-70">Total Value Locked</div>
+          <div className="stat-value text-2xl lg:text-4xl font-bold">${tvl.toLocaleString()}</div>
+          <div className="stat-desc opacity-60">Across all users</div>
         </div>
 
         <div className="stat">
@@ -53,15 +56,15 @@ export function ProtocolStats() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"></path>
             </svg>
           </div>
-          <div className="stat-title">Total Borrowed</div>
-          <div className="stat-value text-accent">${totalBorrowed.toLocaleString()}</div>
-          <div className="stat-desc">Active loans</div>
+          <div className="stat-title opacity-70">Total Borrowed</div>
+          <div className="stat-value text-2xl lg:text-4xl font-bold">${totalBorrowed.toLocaleString()}</div>
+          <div className="stat-desc opacity-60">Active loans</div>
         </div>
 
         <div className="stat">
-          <div className="stat-title">Active Positions</div>
-          <div className="stat-value">{activePositions}</div>
-          <div className="stat-desc">Unique users</div>
+          <div className="stat-title opacity-70">Active Positions</div>
+          <div className="stat-value text-2xl lg:text-4xl font-bold">{activePositions}</div>
+          <div className="stat-desc opacity-60">Unique users</div>
         </div>
       </div>
 

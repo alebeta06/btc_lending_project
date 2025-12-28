@@ -54,8 +54,8 @@ export function HealthFactorCard() {
     );
   }
 
-  // Convert BigInt to number for display (health factor is scaled by 10000)
-  const hfValue = healthFactor ? Number(healthFactor) / 10000 : 0;
+  // Convert BigInt to number for display (health factor is scaled by 100)
+  const hfValue = healthFactor ? Number(healthFactor) / 100 : 0;
   const collateralValue = collateral ? Number(collateral) / 100000000 : 0; // 8 decimals
   const debtValue = debt ? Number(debt) / 10000000000000 : 0; // 13 decimals
 
@@ -82,25 +82,25 @@ export function HealthFactorCard() {
     <div className="card bg-base-100 shadow-xl p-6">
       <h2 className="card-title text-xl mb-4">{statusEmoji} Health Factor</h2>
       
-      <div className="stats stats-vertical lg:stats-horizontal shadow w-full">
+      <div className="stats stats-vertical lg:stats-horizontal shadow w-full bg-base-200">
         <div className="stat">
-          <div className="stat-title">Health Factor</div>
-          <div className={`stat-value text-3xl ${statusColor}`}>
+          <div className="stat-title opacity-70">Health Factor</div>
+          <div className={`stat-value text-3xl font-bold ${statusColor}`}>
             {hfValue === 0 ? "∞" : hfValue.toFixed(2)}
           </div>
-          <div className="stat-desc">{statusText}</div>
+          <div className="stat-desc opacity-60">{statusText}</div>
         </div>
 
         <div className="stat">
-          <div className="stat-title">Collateral</div>
-          <div className="stat-value text-2xl">{collateralValue.toFixed(4)}</div>
-          <div className="stat-desc">wBTC</div>
+          <div className="stat-title opacity-70">Collateral</div>
+          <div className="stat-value text-2xl font-bold">{collateralValue.toFixed(4)}</div>
+          <div className="stat-desc opacity-60">wBTC</div>
         </div>
 
         <div className="stat">
-          <div className="stat-title">Debt</div>
-          <div className="stat-value text-2xl">{debtValue.toFixed(2)}</div>
-          <div className="stat-desc">USD</div>
+          <div className="stat-title opacity-70">Debt</div>
+          <div className="stat-value text-2xl font-bold">{debtValue.toFixed(2)}</div>
+          <div className="stat-desc opacity-60">USD</div>
         </div>
       </div>
 
