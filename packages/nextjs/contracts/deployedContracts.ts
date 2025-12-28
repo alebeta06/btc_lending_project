@@ -7,7 +7,7 @@ const deployedContracts = {
   devnet: {
     MockWBTC: {
       address:
-        "0x3a0bfaa35b086e79c27e27109bdbcb7ec2236276d2c012668de1ce520d9708c",
+        "0x31449f97f3e6795d1bc312cf1598cbccfbec4cd1d9d10160953adf998a00fca",
       abi: [
         {
           type: "impl",
@@ -282,7 +282,7 @@ const deployedContracts = {
     },
     BTCLending: {
       address:
-        "0x7db2eca7c028bed7c98e6ca1ca63197071a1a328e7d0d91487cf7d14d607130",
+        "0x7bf3b4d5d0ba1191399a2dbbbcd1db8ea017d8a989045bcb00dc92ad1d884ac",
       abi: [
         {
           type: "impl",
