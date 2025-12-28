@@ -44,13 +44,35 @@ import { green, red } from "./helpers/colorize-log";
  *
  * @returns {Promise<void>}
  */
+/**
+ * Deploy script for BTCFi Lending Protocol
+ * 
+ * Steps:
+ * 1. Deploy MockWBTC (ERC20 token for testing)
+ * 2. Deploy BTCLending with wBTC address and liquidation threshold
+ */
 const deployScript = async (): Promise<void> => {
+  // Step 1: Deploy MockWBTC
+  console.log("📝 Deploying MockWBTC...");
+  const mockWBTC = await deployContract({
+    contract: "MockWBTC",
+    contractName: "MockWBTC",
+  });
+
+  console.log(`✅ MockWBTC deployed at: ${mockWBTC.address}`);
+
+  // Step 2: Deploy BTCLending
+  console.log("📝 Deploying BTCLending...");
   await deployContract({
-    contract: "YourContract",
+    contract: "BTCLending",
+    contractName: "BTCLending",
     constructorArgs: {
-      owner: deployer.address,
+      wbtc_token: mockWBTC.address,        // Address of MockWBTC
+      liquidation_threshold: 8000n,        // 80% (8000/10000)
     },
   });
+
+  console.log("✅ BTCLending deployed successfully!");
 };
 
 const main = async (): Promise<void> => {
