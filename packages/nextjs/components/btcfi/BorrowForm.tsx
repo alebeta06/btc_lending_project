@@ -41,7 +41,7 @@ export function BorrowForm() {
     args: address ? [address] : undefined,
   });
 
-  const { writeAsync: borrow } = useScaffoldWriteContract({
+  const { sendAsync: borrow } = useScaffoldWriteContract({
     contractName: "BTCLending",
     functionName: "borrow",
   });
@@ -65,7 +65,22 @@ export function BorrowForm() {
 
     try {
       // Convert amount to BigInt (13 decimals for USD debt)
-      const amountBigInt = BigInt(Math.floor(parseFloat(amount) * 10000000000000));
+      const amountFloat = parseFloat(amount);
+      const amountBigInt = BigInt(Math.floor(amountFloat * 10000000000000));
+
+      console.log("=== Borrow Debug Info ===");
+      console.log("Amount (USD):", amountFloat);
+      console.log("Amount (BigInt):", amountBigInt.toString());
+      console.log("Collateral (wBTC):", collateralValue);
+      console.log("Current Debt (USD):", debtValue);
+      console.log("Max Borrow (USD):", maxBorrow);
+      console.log("========================");
+
+      // Validate amount doesn't exceed max borrow
+      if (amountFloat > maxBorrow) {
+        notification.error(`Amount exceeds max borrow of $${maxBorrow.toFixed(2)}`);
+        return;
+      }
 
       notification.info("Borrowing...");
       await borrow({
@@ -75,14 +90,31 @@ export function BorrowForm() {
       notification.success(`✅ Successfully borrowed $${amount}!`);
       setAmount("");
     } catch (error: any) {
-      console.error("Borrow error:", error);
-      notification.error(`Failed: ${error.message || "Unknown error"}`);
+      console.error("=== Borrow Error ===");
+      console.error("Full error:", error);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      console.error("===================");
+      
+      // More specific error messages
+      let errorMsg = "Unknown error";
+      if (error.message) {
+        if (error.message.includes("InsufficientCollateral")) {
+          errorMsg = "Insufficient collateral for this borrow amount";
+        } else if (error.message.includes("health")) {
+          errorMsg = "This borrow would make your Health Factor too low";
+        } else {
+          errorMsg = error.message;
+        }
+      }
+      
+      notification.error(`Failed: ${errorMsg}`);
     }
   };
 
   const collateralValue = collateral ? Number(collateral) / 100000000 : 0;
   const debtValue = debt ? Number(debt) / 10000000000000 : 0;
-  const hfValue = healthFactor ? Number(healthFactor) / 10000 : 0;
+  const hfValue = healthFactor ? Number(healthFactor) / 100 : 0; // Health Factor scaled by 100
 
   // Calculate max borrow (assuming 80% LTV and BTC price of $100,000)
   const btcPrice = 100000; // This should come from oracle
@@ -103,21 +135,21 @@ export function BorrowForm() {
         </div>
       ) : (
         <>
-          <div className="stats stats-vertical shadow mb-4">
+          <div className="stats stats-vertical shadow mb-4 bg-base-200">
             <div className="stat">
-              <div className="stat-title">Your Collateral</div>
-              <div className="stat-value text-2xl">{collateralValue.toFixed(8)} wBTC</div>
-              <div className="stat-desc">≈ ${(collateralValue * btcPrice).toLocaleString()}</div>
+              <div className="stat-title opacity-70">Your Collateral</div>
+              <div className="stat-value text-2xl font-bold">{collateralValue.toFixed(8)} wBTC</div>
+              <div className="stat-desc opacity-60">≈ ${(collateralValue * btcPrice).toLocaleString()}</div>
             </div>
             <div className="stat">
-              <div className="stat-title">Current Debt</div>
-              <div className="stat-value text-2xl">${debtValue.toFixed(2)}</div>
-              <div className="stat-desc">Health Factor: {hfValue === 0 ? "∞" : hfValue.toFixed(2)}</div>
+              <div className="stat-title opacity-70">Current Debt</div>
+              <div className="stat-value text-2xl font-bold">${debtValue.toFixed(2)}</div>
+              <div className="stat-desc opacity-60">Health Factor: {hfValue === 0 ? "∞" : hfValue.toFixed(2)}</div>
             </div>
             <div className="stat">
-              <div className="stat-title">Max Borrow</div>
-              <div className="stat-value text-2xl text-success">${maxBorrow.toFixed(2)}</div>
-              <div className="stat-desc">80% LTV</div>
+              <div className="stat-title opacity-70">Max Borrow</div>
+              <div className="stat-value text-2xl font-bold text-success">${maxBorrow.toFixed(2)}</div>
+              <div className="stat-desc opacity-60">80% LTV</div>
             </div>
           </div>
 
