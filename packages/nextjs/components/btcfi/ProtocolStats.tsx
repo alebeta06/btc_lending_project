@@ -12,16 +12,36 @@ import { useScaffoldReadContract } from "~~/hooks/scaffold-stark/useScaffoldRead
  * - Current BTC Price (from oracle)
  */
 export function ProtocolStats() {
-  // Note: The oracle price is stored internally in the contract but there's no public getter
-  // In production, you'd add a get_oracle_price() function to the contract
-  // For now, we use the price that was set via set_oracle_price (should be $100,000)
-  const btcPrice = 100000;
-  
-  // For now, we'll show placeholder stats for TVL and borrows
-  // In a real implementation, you'd aggregate data from multiple users or add contract functions
-  const tvl = 0; // Would need to track total deposits in contract
-  const totalBorrowed = 0; // Would need to track total borrows in contract
-  const activePositions = 0; // Would need to track unique users in contract
+  // Leer datos reales del contrato
+  const { data: oraclePrice } = useScaffoldReadContract({
+    contractName: "BTCLending",
+    functionName: "get_oracle_price",
+    args: [],
+  });
+
+  const { data: totalDeposits } = useScaffoldReadContract({
+    contractName: "BTCLending",
+    functionName: "get_total_deposits",
+    args: [],
+  });
+
+  const { data: totalBorrowed } = useScaffoldReadContract({
+    contractName: "BTCLending",
+    functionName: "get_total_borrowed",
+    args: [],
+  });
+
+  const { data: activeUsers } = useScaffoldReadContract({
+    contractName: "BTCLending",
+    functionName: "get_active_users_count",
+    args: [],
+  });
+
+  // Convertir valores
+  const btcPrice = oraclePrice ? Number(oraclePrice) / 10000000000000 : 0; // 13 decimals
+  const tvl = totalDeposits ? (Number(totalDeposits) / 100000000) * btcPrice : 0; // wBTC to USD
+  const borrowed = totalBorrowed ? Number(totalBorrowed) / 10000000000000 : 0; // 13 decimals
+  const users = activeUsers ? Number(activeUsers) : 0;
 
   return (
     <div className="card bg-base-100 shadow-xl p-6">
@@ -57,13 +77,13 @@ export function ProtocolStats() {
             </svg>
           </div>
           <div className="stat-title opacity-70">Total Borrowed</div>
-          <div className="stat-value text-2xl lg:text-4xl font-bold">${totalBorrowed.toLocaleString()}</div>
+          <div className="stat-value text-2xl lg:text-4xl font-bold">${borrowed.toLocaleString()}</div>
           <div className="stat-desc opacity-60">Active loans</div>
         </div>
 
         <div className="stat">
           <div className="stat-title opacity-70">Active Positions</div>
-          <div className="stat-value text-2xl lg:text-4xl font-bold">{activePositions}</div>
+          <div className="stat-value text-2xl lg:text-4xl font-bold">{users}</div>
           <div className="stat-desc opacity-60">Unique users</div>
         </div>
       </div>
