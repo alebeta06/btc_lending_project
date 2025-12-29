@@ -37,6 +37,26 @@ pub trait IBTCLending<TContractState> {
     // Obtener la deuda de un usuario
     fn get_user_debt(self: @TContractState, user: ContractAddress) -> u256;
 
+    // Pagar deuda (total o parcial)
+    // @param amount: Cantidad en USD a pagar
+    fn repay(ref self: TContractState, amount: u256);
+
+    // Retirar colateral
+    // @param amount: Cantidad en wBTC a retirar
+    fn withdraw_collateral(ref self: TContractState, amount: u256);
+
+    // Obtener precio actual del oráculo
+    fn get_oracle_price(self: @TContractState) -> u256;
+
+    // Obtener total de depósitos del protocolo
+    fn get_total_deposits(self: @TContractState) -> u256;
+
+    // Obtener total prestado del protocolo
+    fn get_total_borrowed(self: @TContractState) -> u256;
+
+    // Obtener número de usuarios activos
+    fn get_active_users_count(self: @TContractState) -> u256;
+
     // Actualizar precio del oráculo (solo para testing)
     fn set_oracle_price(ref self: TContractState, price: u256);
 }
@@ -62,7 +82,11 @@ mod BTCLending {
         user_debt: Map<ContractAddress, u256>, // Deuda de cada usuario
         wbtc_token: ContractAddress, // Dirección del token wBTC
         liquidation_threshold: u256, // Umbral (8000 = 80%)
-        oracle_price: u256 // Precio BTC en USD
+        oracle_price: u256, // Precio BTC en USD
+        // Estadísticas globales del protocolo
+        total_deposits: u256, // Total wBTC depositado por todos los usuarios
+        total_borrowed: u256, // Total USD prestado por todos los usuarios
+        active_users: u256 // Número de usuarios con posiciones activas
     }
 
     // ============================================
@@ -99,6 +123,16 @@ mod BTCLending {
             // 3. Actualizar el colateral del usuario en el storage
             let current_collateral = self.user_collateral.read(caller);
             self.user_collateral.write(caller, current_collateral + amount);
+
+            // 4. Actualizar estadísticas globales
+            let total = self.total_deposits.read();
+            self.total_deposits.write(total + amount);
+
+            // Si es el primer depósito del usuario, incrementar active_users
+            if current_collateral == 0 {
+                let users = self.active_users.read();
+                self.active_users.write(users + 1);
+            }
         }
 
         // ============================================
@@ -115,8 +149,78 @@ mod BTCLending {
             // Si es menor, la transacción se revierte
             let health_factor = self.calculate_health_factor(caller);
             assert(health_factor >= 100, 'Health factor too low');
+
+            // 3. Actualizar total_borrowed global
+            let total = self.total_borrowed.read();
+            self.total_borrowed.write(total + amount);
             // NOTA: En producción, aquí transferirías stablecoins al usuario
         // Por ahora solo actualizamos la deuda
+        }
+
+        // ============================================
+        // PAGAR DEUDA
+        // ============================================
+        // NOTA: En este protocolo simplificado, solo reducimos la deuda
+        // En producción, aquí recibirías stablecoins del usuario
+        fn repay(ref self: ContractState, amount: u256) {
+            let caller = get_caller_address();
+            let current_debt = self.user_debt.read(caller);
+
+            // Validar que la cantidad no exceda la deuda
+            assert(amount <= current_debt, 'Amount exceeds debt');
+            assert(amount > 0, 'Amount must be positive');
+
+            // Actualizar deuda del usuario
+            self.user_debt.write(caller, current_debt - amount);
+
+            // Actualizar total_borrowed global
+            let total = self.total_borrowed.read();
+            self.total_borrowed.write(total - amount);
+        }
+
+        // ============================================
+        // RETIRAR COLATERAL
+        // ============================================
+        fn withdraw_collateral(ref self: ContractState, amount: u256) {
+            let caller = get_caller_address();
+            let current_collateral = self.user_collateral.read(caller);
+
+            // Validar que tenga suficiente colateral
+            assert(amount <= current_collateral, 'Insufficient collateral');
+            assert(amount > 0, 'Amount must be positive');
+
+            // Calcular nuevo colateral después del retiro
+            let new_collateral = current_collateral - amount;
+
+            // Si el usuario tiene deuda, validar que el Health Factor permanezca >= 100
+            let debt = self.user_debt.read(caller);
+            if debt > 0 {
+                // Temporalmente actualizar colateral para calcular nuevo HF
+                self.user_collateral.write(caller, new_collateral);
+                let health_factor = self.calculate_health_factor(caller);
+
+                // Revertir si HF sería muy bajo
+                assert(health_factor >= 100, 'Health factor too low');
+            } else {
+                // Sin deuda, puede retirar libremente
+                self.user_collateral.write(caller, new_collateral);
+            }
+
+            // Transferir wBTC al usuario
+            let token_dispatcher = IERC20Dispatcher { contract_address: self.wbtc_token.read() };
+            token_dispatcher.transfer(caller, amount);
+
+            // Actualizar total_deposits global
+            let total = self.total_deposits.read();
+            self.total_deposits.write(total - amount);
+
+            // Si retiró todo y no tiene deuda, decrementar active_users
+            if new_collateral == 0 && debt == 0 {
+                let users = self.active_users.read();
+                if users > 0 {
+                    self.active_users.write(users - 1);
+                }
+            }
         }
 
         // ============================================
@@ -128,7 +232,7 @@ mod BTCLending {
             assert(health_factor < 100, 'User is healthy');
 
             // 2. Obtener datos del usuario
-            let _debt = self.user_debt.read(user);
+            let debt = self.user_debt.read(user);
             let collateral = self.user_collateral.read(user);
 
             let liquidator = get_caller_address();
@@ -140,6 +244,18 @@ mod BTCLending {
             // 4. Limpiar la posición del usuario
             self.user_debt.write(user, 0);
             self.user_collateral.write(user, 0);
+
+            // 5. Actualizar estadísticas globales
+            let total_deposits = self.total_deposits.read();
+            self.total_deposits.write(total_deposits - collateral);
+
+            let total_borrowed = self.total_borrowed.read();
+            self.total_borrowed.write(total_borrowed - debt);
+
+            let users = self.active_users.read();
+            if users > 0 {
+                self.active_users.write(users - 1);
+            }
         }
 
         // ============================================
@@ -181,6 +297,26 @@ mod BTCLending {
 
         fn get_user_debt(self: @ContractState, user: ContractAddress) -> u256 {
             self.user_debt.read(user)
+        }
+
+        // ============================================
+        // GETTERS GLOBALES - Estadísticas del Protocolo
+        // ============================================
+
+        fn get_oracle_price(self: @ContractState) -> u256 {
+            self.oracle_price.read()
+        }
+
+        fn get_total_deposits(self: @ContractState) -> u256 {
+            self.total_deposits.read()
+        }
+
+        fn get_total_borrowed(self: @ContractState) -> u256 {
+            self.total_borrowed.read()
+        }
+
+        fn get_active_users_count(self: @ContractState) -> u256 {
+            self.active_users.read()
         }
 
         // ============================================
