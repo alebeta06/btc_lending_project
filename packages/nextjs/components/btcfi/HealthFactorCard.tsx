@@ -82,31 +82,31 @@ export function HealthFactorCard() {
     <div className="card bg-base-100 shadow-xl p-6">
       <h2 className="card-title text-xl mb-4">{statusEmoji} Health Factor</h2>
       
-      <div className="stats stats-vertical lg:stats-horizontal shadow w-full bg-base-200">
+      <div className="stats stats-vertical shadow w-full bg-base-200">
         <div className="stat">
-          <div className="stat-title opacity-70">Health Factor</div>
+          <div className="stat-title opacity-70 text-xs">Health Factor</div>
           <div className={`stat-value text-3xl font-bold ${statusColor}`}>
             {hfValue === 0 ? "∞" : hfValue.toFixed(2)}
           </div>
-          <div className="stat-desc opacity-60">{statusText}</div>
+          <div className="stat-desc opacity-60 text-xs">{statusText}</div>
         </div>
 
         <div className="stat">
-          <div className="stat-title opacity-70">Collateral</div>
-          <div className="stat-value text-2xl font-bold">{collateralValue.toFixed(4)}</div>
-          <div className="stat-desc opacity-60">wBTC</div>
+          <div className="stat-title opacity-70 text-xs">Collateral</div>
+          <div className="stat-value text-xl font-bold">{collateralValue.toFixed(4)}</div>
+          <div className="stat-desc opacity-60 text-xs">wBTC</div>
         </div>
 
         <div className="stat">
-          <div className="stat-title opacity-70">Debt</div>
-          <div className="stat-value text-2xl font-bold">{debtValue.toFixed(2)}</div>
-          <div className="stat-desc opacity-60">USD</div>
+          <div className="stat-title opacity-70 text-xs">Debt</div>
+          <div className="stat-value text-xl font-bold">{debtValue.toFixed(2)}</div>
+          <div className="stat-desc opacity-60 text-xs">USD</div>
         </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-3">
         <div className="alert alert-info">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <div className="text-xs">
