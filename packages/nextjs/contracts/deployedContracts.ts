@@ -7,7 +7,7 @@ const deployedContracts = {
   devnet: {
     MockWBTC: {
       address:
-        "0x31449f97f3e6795d1bc312cf1598cbccfbec4cd1d9d10160953adf998a00fca",
+        "0x619b9be413aa94aeacb2634e197719518fb832c847e516edf12830ee8ae77dc",
       abi: [
         {
           type: "impl",
@@ -282,7 +282,7 @@ const deployedContracts = {
     },
     BTCLending: {
       address:
-        "0x7bf3b4d5d0ba1191399a2dbbbcd1db8ea017d8a989045bcb00dc92ad1d884ac",
+        "0x41adb25fcd964b275f54d4a3ad48cc5691a31ce9dbd506d4cda037df8c8b84f",
       abi: [
         {
           type: "impl",
@@ -393,6 +393,74 @@ const deployedContracts = {
             },
             {
               type: "function",
+              name: "repay",
+              inputs: [
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "withdraw_collateral",
+              inputs: [
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "get_oracle_price",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::integer::u256",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "get_total_deposits",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::integer::u256",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "get_total_borrowed",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::integer::u256",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "get_active_users_count",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::integer::u256",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
               name: "set_oracle_price",
               inputs: [
                 {
@@ -427,7 +495,7 @@ const deployedContracts = {
         },
       ],
       classHash:
-        "0x6fdeea38ba46053400c03758f344019ca5f1892c284e159f44dbc11e738008e",
+        "0x10f7a0e510e25baa8933e93a93ca37c20e829626168ce01fa1403ed5f2e6fca",
     },
   },
 } as const;
