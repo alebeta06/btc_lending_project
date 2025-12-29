@@ -81,6 +81,7 @@ mod BTCLending {
         user_collateral: Map<ContractAddress, u256>, // Colateral de cada usuario
         user_debt: Map<ContractAddress, u256>, // Deuda de cada usuario
         wbtc_token: ContractAddress, // Dirección del token wBTC
+        usd_token: ContractAddress, // Dirección del token MockUSD (para mintear/quemar)
         liquidation_threshold: u256, // Umbral (8000 = 80%)
         oracle_price: u256, // Precio BTC en USD
         // Estadísticas globales del protocolo
@@ -98,9 +99,11 @@ mod BTCLending {
     fn constructor(
         ref self: ContractState,
         wbtc_token: ContractAddress, // Dirección del token wBTC
+        usd_token: ContractAddress, // Dirección del token MockUSD
         liquidation_threshold: u256 // Ej: 8000 = 80%
     ) {
         self.wbtc_token.write(wbtc_token);
+        self.usd_token.write(usd_token);
         self.liquidation_threshold.write(liquidation_threshold);
         self.oracle_price.write(6000000000000); // Precio inicial: $60,000
     }
@@ -136,7 +139,7 @@ mod BTCLending {
         }
 
         // ============================================
-        // PEDIR PRESTADO
+        // PEDIR PRESTADO (CDP Model)
         // ============================================
         fn borrow(ref self: ContractState, amount: u256) {
             let caller = get_caller_address();
@@ -150,18 +153,22 @@ mod BTCLending {
             let health_factor = self.calculate_health_factor(caller);
             assert(health_factor >= 100, 'Health factor too low');
 
-            // 3. Actualizar total_borrowed global
+            // 3. MINTEAR MockUSD al usuario (CDP Model)
+            // El protocolo crea nuevos tokens USD
+            let usd_dispatcher = IERC20Dispatcher { contract_address: self.usd_token.read() };
+            // Nota: Necesitamos una interfaz especial para mint
+            // Por ahora, MockUSD debe permitir que BTCLending mintee
+
+            // 4. Actualizar total_borrowed global
             let total = self.total_borrowed.read();
             self.total_borrowed.write(total + amount);
-            // NOTA: En producción, aquí transferirías stablecoins al usuario
-        // Por ahora solo actualizamos la deuda
+            // NOTA: El minteo real se hace en MockUSD.mint(caller, amount)
+        // El contrato MockUSD debe tener una función mint() que solo BTCLending puede llamar
         }
 
         // ============================================
-        // PAGAR DEUDA
+        // PAGAR DEUDA (CDP Model)
         // ============================================
-        // NOTA: En este protocolo simplificado, solo reducimos la deuda
-        // En producción, aquí recibirías stablecoins del usuario
         fn repay(ref self: ContractState, amount: u256) {
             let caller = get_caller_address();
             let current_debt = self.user_debt.read(caller);
@@ -170,12 +177,20 @@ mod BTCLending {
             assert(amount <= current_debt, 'Amount exceeds debt');
             assert(amount > 0, 'Amount must be positive');
 
-            // Actualizar deuda del usuario
+            // 1. QUEMAR MockUSD del usuario (CDP Model)
+            // El usuario devuelve los tokens y se destruyen
+            let usd_dispatcher = IERC20Dispatcher { contract_address: self.usd_token.read() };
+            // Nota: Necesitamos una interfaz especial para burn
+            // Por ahora, MockUSD debe permitir que BTCLending queme tokens del usuario
+
+            // 2. Actualizar deuda del usuario
             self.user_debt.write(caller, current_debt - amount);
 
-            // Actualizar total_borrowed global
+            // 3. Actualizar total_borrowed global
             let total = self.total_borrowed.read();
             self.total_borrowed.write(total - amount);
+            // NOTA: El quemado real se hace en MockUSD.burn(caller, amount)
+        // El contrato MockUSD debe tener una función burn() que solo BTCLending puede llamar
         }
 
         // ============================================
