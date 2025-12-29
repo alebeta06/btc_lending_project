@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ConnectedAddress } from "~~/components/ConnectedAddress";
-import { MintWBTCForm, SetOraclePriceForm, HealthFactorCard, DepositForm, BorrowForm, ProtocolStats } from "~~/components/btcfi";
+import { MintWBTCForm, SetOraclePriceForm, HealthFactorCard, DepositForm, BorrowForm, RepayForm, WithdrawForm, ProtocolStats } from "~~/components/btcfi";
 
 const Home = () => {
   return (
@@ -32,21 +32,27 @@ const Home = () => {
         <ProtocolStats />
       </div>
 
-      {/* Main Interaction Section */}
+      {/* Main Interaction Section - 4 Columns */}
       <div className="w-full max-w-7xl px-5 mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Mint wBTC */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Column 1: Mint wBTC */}
           <div className="lg:col-span-1">
             <MintWBTCForm />
           </div>
 
-          {/* Middle Column: Deposit & Borrow */}
+          {/* Column 2: Deposit & Withdraw */}
           <div className="lg:col-span-1 space-y-6">
             <DepositForm />
-            <BorrowForm />
+            <WithdrawForm />
           </div>
 
-          {/* Right Column: Health Factor */}
+          {/* Column 3: Borrow & Repay */}
+          <div className="lg:col-span-1 space-y-6">
+            <BorrowForm />
+            <RepayForm />
+          </div>
+
+          {/* Column 4: Health Factor */}
           <div className="lg:col-span-1">
             <HealthFactorCard />
           </div>
