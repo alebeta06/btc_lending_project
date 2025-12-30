@@ -61,6 +61,32 @@ pub trait IBTCLending<TContractState> {
     fn set_oracle_price(ref self: TContractState, price: u256);
 }
 
+// ============================================
+// PRAGMA ORACLE INTERFACE
+// ============================================
+// Interfaz para interactuar con Pragma Oracle
+
+#[derive(Drop, Copy, Serde)]
+struct PragmaPricesResponse {
+    price: u128,
+    decimals: u32,
+    last_updated_timestamp: u64,
+    num_sources_aggregated: u32,
+    expiration_timestamp: Option<u64>,
+}
+
+#[starknet::interface]
+trait IPragmaABI<TContractState> {
+    fn get_data_median(self: @TContractState, data_type: DataType) -> PragmaPricesResponse;
+}
+
+#[derive(Drop, Copy, Serde)]
+enum DataType {
+    SpotEntry: felt252,
+    FutureEntry: (felt252, u64),
+    GenericEntry: felt252,
+}
+
 #[starknet::contract]
 mod BTCLending {
     use openzeppelin_token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
@@ -69,6 +95,7 @@ mod BTCLending {
         StoragePointerWriteAccess,
     };
     use starknet::{ContractAddress, get_caller_address, get_contract_address};
+    use super::{DataType, IPragmaABIDispatcher, IPragmaABIDispatcherTrait};
 
     // ============================================
     // STORAGE - Almacenamiento Permanente
@@ -83,7 +110,8 @@ mod BTCLending {
         wbtc_token: ContractAddress, // Dirección del token wBTC
         usd_token: ContractAddress, // Dirección del token MockUSD (para mintear/quemar)
         liquidation_threshold: u256, // Umbral (8000 = 80%)
-        oracle_price: u256, // Precio BTC en USD
+        oracle_price: u256, // Precio BTC en USD (fallback si oracle falla)
+        pragma_oracle: ContractAddress, // Dirección del Pragma Oracle
         // Estadísticas globales del protocolo
         total_deposits: u256, // Total wBTC depositado por todos los usuarios
         total_borrowed: u256, // Total USD prestado por todos los usuarios
@@ -100,12 +128,14 @@ mod BTCLending {
         ref self: ContractState,
         wbtc_token: ContractAddress, // Dirección del token wBTC
         usd_token: ContractAddress, // Dirección del token MockUSD
-        liquidation_threshold: u256 // Ej: 8000 = 80%
+        liquidation_threshold: u256, // Ej: 8000 = 80%
+        pragma_oracle: ContractAddress // Dirección del Pragma Oracle
     ) {
         self.wbtc_token.write(wbtc_token);
         self.usd_token.write(usd_token);
         self.liquidation_threshold.write(liquidation_threshold);
-        self.oracle_price.write(6000000000000); // Precio inicial: $60,000
+        self.pragma_oracle.write(pragma_oracle);
+        self.oracle_price.write(10000000000000000); // Precio fallback: $100,000
     }
 
     #[abi(embed_v0)]
@@ -319,7 +349,34 @@ mod BTCLending {
         // ============================================
 
         fn get_oracle_price(self: @ContractState) -> u256 {
-            self.oracle_price.read()
+            // Intentar obtener precio de Pragma Oracle
+            let pragma_address = self.pragma_oracle.read();
+
+            // Si pragma_oracle es 0x0, usar precio fallback
+            let zero_address: ContractAddress = 0.try_into().unwrap();
+            if pragma_address == zero_address {
+                return self.oracle_price.read();
+            }
+
+            // Consultar Pragma Oracle
+            let pragma_dispatcher = super::IPragmaABIDispatcher {
+                contract_address: pragma_address,
+            };
+
+            // BTC/USD pair ID
+            let btc_usd_pair: felt252 = 'BTC/USD';
+            let data_type = super::DataType::SpotEntry(btc_usd_pair);
+
+            // Obtener precio median
+            let response = pragma_dispatcher.get_data_median(data_type);
+
+            // Pragma devuelve precio con 8 decimales
+            // Convertir a 13 decimales para consistencia (nuestro estándar USD)
+            // response.price es u128, convertir a u256
+            let price_u256: u256 = response.price.into();
+            let price_adjusted = price_u256 * 100000; // 8 decimals -> 13 decimals
+
+            price_adjusted
         }
 
         fn get_total_deposits(self: @ContractState) -> u256 {
