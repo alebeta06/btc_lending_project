@@ -7,7 +7,7 @@ const deployedContracts = {
   devnet: {
     MockWBTC: {
       address:
-        "0x619b9be413aa94aeacb2634e197719518fb832c847e516edf12830ee8ae77dc",
+        "0x78015b9093e3ea32d26fc38972248e68e45da97be6bef83224b2fca0593cb86",
       abi: [
         {
           type: "impl",
@@ -280,9 +280,333 @@ const deployedContracts = {
       classHash:
         "0x24c1ef5aea7908501f1090eb20c6b9a182492bc763faed7fb278562a1b80e1d",
     },
+    MockUSD: {
+      address:
+        "0x4ca71756e96ea590788b0a54276ccc57cc055b488d1cc0e3300dbe6974ed219",
+      abi: [
+        {
+          type: "impl",
+          name: "ERC20MockUSDImpl",
+          interface_name: "contracts::mocks::usd_mock::IERC20MockUSD",
+        },
+        {
+          type: "struct",
+          name: "core::integer::u256",
+          members: [
+            {
+              name: "low",
+              type: "core::integer::u128",
+            },
+            {
+              name: "high",
+              type: "core::integer::u128",
+            },
+          ],
+        },
+        {
+          type: "enum",
+          name: "core::bool",
+          variants: [
+            {
+              name: "False",
+              type: "()",
+            },
+            {
+              name: "True",
+              type: "()",
+            },
+          ],
+        },
+        {
+          type: "struct",
+          name: "core::byte_array::ByteArray",
+          members: [
+            {
+              name: "data",
+              type: "core::array::Array::<core::bytes_31::bytes31>",
+            },
+            {
+              name: "pending_word",
+              type: "core::felt252",
+            },
+            {
+              name: "pending_word_len",
+              type: "core::internal::bounded_int::BoundedInt::<0, 30>",
+            },
+          ],
+        },
+        {
+          type: "interface",
+          name: "contracts::mocks::usd_mock::IERC20MockUSD",
+          items: [
+            {
+              type: "function",
+              name: "transfer",
+              inputs: [
+                {
+                  name: "recipient",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::bool",
+                },
+              ],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "transfer_from",
+              inputs: [
+                {
+                  name: "sender",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "recipient",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::bool",
+                },
+              ],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "approve",
+              inputs: [
+                {
+                  name: "spender",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::bool",
+                },
+              ],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "balance_of",
+              inputs: [
+                {
+                  name: "account",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::integer::u256",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "allowance",
+              inputs: [
+                {
+                  name: "owner",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "spender",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              outputs: [
+                {
+                  type: "core::integer::u256",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "mint",
+              inputs: [
+                {
+                  name: "to",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "burn",
+              inputs: [
+                {
+                  name: "from",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+                {
+                  name: "amount",
+                  type: "core::integer::u256",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "set_lending_contract",
+              inputs: [
+                {
+                  name: "new_lending",
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              outputs: [],
+              state_mutability: "external",
+            },
+            {
+              type: "function",
+              name: "get_lending_contract",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::starknet::contract_address::ContractAddress",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "name",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::byte_array::ByteArray",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "symbol",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::byte_array::ByteArray",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "decimals",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::integer::u8",
+                },
+              ],
+              state_mutability: "view",
+            },
+          ],
+        },
+        {
+          type: "constructor",
+          name: "constructor",
+          inputs: [
+            {
+              name: "lending_contract",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::mocks::usd_mock::MockUSD::Transfer",
+          kind: "struct",
+          members: [
+            {
+              name: "from",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "to",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "value",
+              type: "core::integer::u256",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::mocks::usd_mock::MockUSD::Approval",
+          kind: "struct",
+          members: [
+            {
+              name: "owner",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "spender",
+              type: "core::starknet::contract_address::ContractAddress",
+              kind: "data",
+            },
+            {
+              name: "value",
+              type: "core::integer::u256",
+              kind: "data",
+            },
+          ],
+        },
+        {
+          type: "event",
+          name: "contracts::mocks::usd_mock::MockUSD::Event",
+          kind: "enum",
+          variants: [
+            {
+              name: "Transfer",
+              type: "contracts::mocks::usd_mock::MockUSD::Transfer",
+              kind: "nested",
+            },
+            {
+              name: "Approval",
+              type: "contracts::mocks::usd_mock::MockUSD::Approval",
+              kind: "nested",
+            },
+          ],
+        },
+      ],
+      classHash:
+        "0x25d8f26fe4a5aac5c3e62106d07663b2d9728c31de9d15e5de3ad8e6a3a8c37",
+    },
     BTCLending: {
       address:
-        "0x41adb25fcd964b275f54d4a3ad48cc5691a31ce9dbd506d4cda037df8c8b84f",
+        "0x18ba6766e80c8022ec3f8ba1132c74ec8ff3369a50a5359fc5623d11bd7d667",
       abi: [
         {
           type: "impl",
@@ -482,8 +806,16 @@ const deployedContracts = {
               type: "core::starknet::contract_address::ContractAddress",
             },
             {
+              name: "usd_token",
+              type: "core::starknet::contract_address::ContractAddress",
+            },
+            {
               name: "liquidation_threshold",
               type: "core::integer::u256",
+            },
+            {
+              name: "pragma_oracle",
+              type: "core::starknet::contract_address::ContractAddress",
             },
           ],
         },
@@ -495,7 +827,7 @@ const deployedContracts = {
         },
       ],
       classHash:
-        "0x10f7a0e510e25baa8933e93a93ca37c20e829626168ce01fa1403ed5f2e6fca",
+        "0x328bf75c76d0e1422555d2a40a42aaf05eb1d0604cf10c547a20b762909f4e7",
     },
   },
 } as const;
