@@ -5,3 +5,4 @@
 // Los mocks simulan contratos reales (como wBTC) sin necesidad de desplegarlos
 
 pub mod erc20_mock;
+pub mod usd_mock;
