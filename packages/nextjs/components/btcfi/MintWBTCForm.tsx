@@ -24,12 +24,13 @@ export function MintWBTCForm() {
   const { data: balance } = useScaffoldReadContract({
     contractName: "MockWBTC",
     functionName: "balance_of",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   const { sendAsync: mint } = useScaffoldWriteContract({
     contractName: "MockWBTC",
     functionName: "mint",
+    args: [undefined, undefined], // Placeholder args - will be provided when calling mint()
   });
 
   const handleMint = async () => {
@@ -48,9 +49,7 @@ export function MintWBTCForm() {
       const amountBigInt = BigInt(Math.floor(parseFloat(amount) * 100000000));
 
       notification.info("Minting wBTC...");
-      await mint({
-        args: [address, amountBigInt],
-      });
+      await mint({ args: [address, amountBigInt] });
 
       notification.success(`✅ Successfully minted ${amount} wBTC!`);
       setAmount("");
@@ -71,10 +70,18 @@ export function MintWBTCForm() {
   ];
 
   return (
-    <div className="card bg-gradient-to-br from-primary/10 to-secondary/10 shadow-xl p-6 border-2 border-primary/20">
-      <div className="flex items-center gap-2 mb-4">
-        <h2 className="card-title text-xl">🪙 Mint Test wBTC</h2>
-        <div className="badge badge-warning">Testing Only</div>
+    <div className="card bg-base-100 shadow-xl p-6">
+      <h2 className="card-title text-xl mb-4">🪙 Mint Test wBTC</h2>
+
+      {/* Testnet Disclaimer */}
+      <div className="alert alert-warning mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div className="text-xs">
+          <p><strong>⚠️ Testnet Only</strong></p>
+          <p>This function only exists for testing. These tokens have no real value.</p>
+        </div>
       </div>
 
       {!address ? (
