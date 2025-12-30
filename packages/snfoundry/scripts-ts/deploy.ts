@@ -61,18 +61,43 @@ const deployScript = async (): Promise<void> => {
 
   console.log(`✅ MockWBTC deployed at: ${mockWBTC.address}`);
 
-  // Step 2: Deploy BTCLending
+  // Step 2: Deploy MockUSD with temporary lending address
+  console.log("📝 Deploying MockUSD (with temporary address)...");
+  const mockUSD = await deployContract({
+    contract: "MockUSD",
+    contractName: "MockUSD",
+    constructorArgs: {
+      lending_contract: mockWBTC.address, // Temporary, will update later
+    },
+  });
+
+  console.log(`✅ MockUSD deployed at: ${mockUSD.address}`);
+
+  // Step 3: Deploy BTCLending with all addresses
   console.log("📝 Deploying BTCLending...");
-  await deployContract({
+  const btcLending = await deployContract({
     contract: "BTCLending",
     contractName: "BTCLending",
     constructorArgs: {
       wbtc_token: mockWBTC.address,        // Address of MockWBTC
+      usd_token: mockUSD.address,          // Address of MockUSD
       liquidation_threshold: 8000n,        // 80% (8000/10000)
+      pragma_oracle: mockWBTC.address,     // Use mockWBTC as placeholder (will use fallback price)
     },
   });
 
-  console.log("✅ BTCLending deployed successfully!");
+  console.log(`✅ BTCLending deployed at: ${btcLending.address}`);
+
+  console.log("\n🎉 All contracts deployed successfully!");
+  console.log("\n📋 Deployment Summary:");
+  console.log(`   MockWBTC: ${mockWBTC.address}`);
+  console.log(`   MockUSD: ${mockUSD.address}`);
+  console.log(`   BTCLending: ${btcLending.address}`);
+  console.log("\n⚠️  Important:");
+  console.log("   1. MockUSD needs to be updated to allow BTCLending to mint/burn");
+  console.log(`   2. Call MockUSD.set_lending_contract(${btcLending.address})`);
+  console.log("   3. pragma_oracle is set to mockWBTC address (fallback will be used)");
+  console.log("   4. Use SetOraclePrice to set BTC price manually in devnet");
 };
 
 const main = async (): Promise<void> => {
