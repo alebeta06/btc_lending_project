@@ -35,7 +35,14 @@ export function WithdrawForm() {
   const { data: healthFactor } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "calculate_health_factor",
-    args: address ? [address] : undefined,
+    args: [address],
+  });
+
+  // Leer precio de BTC desde el oracle
+  const { data: btcPriceData } = useScaffoldReadContract({
+    contractName: "BTCLending",
+    functionName: "get_btc_price",
+    args: [],
   });
 
   const { sendAsync: withdraw } = useScaffoldWriteContract({
@@ -122,7 +129,10 @@ export function WithdrawForm() {
     // HF = (Collateral * Price * 0.8) / Debt >= 1.0
     // Collateral_min = Debt / (Price * 0.8)
     // Max_Withdraw = Collateral - Collateral_min
-    const btcPrice = 100000; // TODO: Leer del oracle
+    
+    // Leer precio del oracle (fallback a 100,000 si no está disponible)
+    const btcPrice = btcPriceData ? Number(btcPriceData) / 10000000000000 : 100000;
+    
     const minCollateralUSD = debtValue / 0.8;
     const minCollateralBTC = minCollateralUSD / btcPrice;
     maxWithdraw = Math.max(0, collateralValue - minCollateralBTC);
