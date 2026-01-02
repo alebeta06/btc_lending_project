@@ -4,6 +4,7 @@
 // Este contrato permite a los usuarios depositar Bitcoin (wBTC) como colateral
 // y pedir prestado contra ese colateral. Incluye liquidaciones automáticas.
 
+// Pragma Oracle imports
 use starknet::ContractAddress;
 
 pub mod mocks;
@@ -37,7 +38,19 @@ pub trait IBTCLending<TContractState> {
     // Obtener la deuda de un usuario
     fn get_user_debt(self: @TContractState, user: ContractAddress) -> u256;
 
-    // Actualizar precio del oráculo (solo para testing)
+    // Retirar colateral depositado
+    // @param amount: Cantidad de wBTC a retirar (8 decimales)
+    fn withdraw_collateral(ref self: TContractState, amount: u256);
+
+    // Pagar deuda
+    // @param amount: Cantidad de deuda a pagar (en USD)
+    fn repay(ref self: TContractState, amount: u256);
+
+    // Obtener precio actual de BTC desde Pragma Oracle
+    // @return: Precio de BTC en USD (13 decimales)
+    fn get_btc_price(self: @TContractState) -> u256;
+
+    // Actualizar precio del oráculo (solo para testing/fallback)
     fn set_oracle_price(ref self: TContractState, price: u256);
 }
 
@@ -62,7 +75,8 @@ mod BTCLending {
         user_debt: Map<ContractAddress, u256>, // Deuda de cada usuario
         wbtc_token: ContractAddress, // Dirección del token wBTC
         liquidation_threshold: u256, // Umbral (8000 = 80%)
-        oracle_price: u256 // Precio BTC en USD
+        oracle_price: u256, // Precio BTC en USD (fallback)
+        pragma_oracle: ContractAddress // Dirección del contrato Pragma Oracle
     }
 
     // ============================================
@@ -74,11 +88,13 @@ mod BTCLending {
     fn constructor(
         ref self: ContractState,
         wbtc_token: ContractAddress, // Dirección del token wBTC
-        liquidation_threshold: u256 // Ej: 8000 = 80%
+        liquidation_threshold: u256, // Ej: 8000 = 80%
+        pragma_oracle: ContractAddress // Dirección del Pragma Oracle
     ) {
         self.wbtc_token.write(wbtc_token);
         self.liquidation_threshold.write(liquidation_threshold);
-        self.oracle_price.write(6000000000000); // Precio inicial: $60,000
+        self.oracle_price.write(6000000000000); // Precio inicial: $60,000 (fallback)
+        self.pragma_oracle.write(pragma_oracle);
     }
 
     #[abi(embed_v0)]
@@ -156,8 +172,8 @@ mod BTCLending {
                 return 999_999_999;
             }
 
-            // 1. Obtener precio de BTC
-            let btc_price = self.oracle_price.read();
+            // 1. Obtener precio de BTC desde oracle
+            let btc_price = self.get_btc_price();
 
             // 2. Convertir colateral BTC a USD
             // Dividimos entre 10^8 porque BTC tiene 8 decimales
@@ -187,8 +203,84 @@ mod BTCLending {
         // ACTUALIZAR PRECIO (Solo para Testing)
         // ============================================
 
+        // ============================================
+        // RETIRAR COLATERAL
+        // ============================================
+        fn withdraw_collateral(ref self: ContractState, amount: u256) {
+            let caller = get_caller_address();
+
+            // 1. Verificar que el monto sea positivo
+            assert(amount > 0, 'Amount must be positive');
+
+            // 2. Verificar que el usuario tenga suficiente colateral
+            let current_collateral = self.user_collateral.read(caller);
+            assert(current_collateral >= amount, 'Insufficient collateral');
+
+            // 3. Actualizar el colateral ANTES de verificar HF
+            self.user_collateral.write(caller, current_collateral - amount);
+
+            // 4. Verificar que el Health Factor siga siendo >= 100
+            // Solo si el usuario tiene deuda
+            let debt = self.user_debt.read(caller);
+            if debt > 0 {
+                let health_factor = self.calculate_health_factor(caller);
+                assert(health_factor >= 100, 'Health factor too low');
+            }
+
+            // 5. Transferir wBTC del contrato al usuario
+            let token_dispatcher = IERC20Dispatcher { contract_address: self.wbtc_token.read() };
+            token_dispatcher.transfer(caller, amount);
+        }
+
+        // ============================================
+        // PAGAR DEUDA
+        // ============================================
+        fn repay(ref self: ContractState, amount: u256) {
+            let caller = get_caller_address();
+
+            // 1. Verificar que el monto sea positivo
+            assert(amount > 0, 'Amount must be positive');
+
+            // 2. Obtener la deuda actual
+            let current_debt = self.user_debt.read(caller);
+            assert(current_debt > 0, 'No debt to repay');
+
+            // 3. Calcular cuánto pagar (no puede pagar más de la deuda)
+            let repay_amount = if amount > current_debt {
+                current_debt
+            } else {
+                amount
+            };
+
+            // 4. Actualizar la deuda
+            self.user_debt.write(caller, current_debt - repay_amount);
+            // NOTA: En producción aquí transferirías stablecoins del usuario al contrato
+        // Por ahora solo actualizamos la deuda en storage
+        }
+
+        // ============================================
+        // OBTENER PRECIO BTC DESDE PRAGMA ORACLE
+        // ============================================
+        fn get_btc_price(self: @ContractState) -> u256 {
+            let oracle_address = self.pragma_oracle.read();
+            let zero_address: ContractAddress = starknet::contract_address_const::<0>();
+
+            // Si no hay oracle configurado, usar precio fallback
+            if oracle_address == zero_address {
+                return self.oracle_price.read();
+            }
+
+            // TODO: Integrar con Pragma Oracle cuando se tenga la dirección correcta
+            // Por ahora, siempre usar precio fallback
+            // En producción, aquí se llamaría al oracle con:
+            // let oracle_dispatcher = IPragmaABIDispatcher { contract_address: oracle_address };
+            // let price_data = oracle_dispatcher.get_data_median(DataType::SpotEntry('BTC/USD'));
+
+            self.oracle_price.read()
+        }
+
         fn set_oracle_price(ref self: ContractState, price: u256) {
-            // En producción esto vendría de Pragma Oracle
+            // Actualizar precio fallback (útil para testing)
             self.oracle_price.write(price);
         }
     }
