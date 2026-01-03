@@ -4,10 +4,10 @@
  */
 
 const deployedContracts = {
-  devnet: {
+  sepolia: {
     MockWBTC: {
       address:
-        "0x78015b9093e3ea32d26fc38972248e68e45da97be6bef83224b2fca0593cb86",
+        "0x01f0fe1fe348e56add1037ef026ed141a038294209104af59c0fbb398e469a29",
       abi: [
         {
           type: "impl",
@@ -282,7 +282,7 @@ const deployedContracts = {
     },
     MockUSD: {
       address:
-        "0x4ca71756e96ea590788b0a54276ccc57cc055b488d1cc0e3300dbe6974ed219",
+        "0x076f5270bb50124f87f772a4af59ffd1331c915ccb6a44db9d57282f00eebcbf",
       abi: [
         {
           type: "impl",
@@ -606,7 +606,7 @@ const deployedContracts = {
     },
     BTCLending: {
       address:
-        "0x18ba6766e80c8022ec3f8ba1132c74ec8ff3369a50a5359fc5623d11bd7d667",
+        "0x07c9bbcfbbc008e99d9f6dd4c15de43c45ad0a4262b7112e683592066118f9b0",
       abi: [
         {
           type: "impl",
@@ -741,7 +741,7 @@ const deployedContracts = {
             },
             {
               type: "function",
-              name: "get_oracle_price",
+              name: "get_btc_price",
               inputs: [],
               outputs: [
                 {
@@ -828,27 +828,6 @@ const deployedContracts = {
       ],
       classHash:
         "0x328bf75c76d0e1422555d2a40a42aaf05eb1d0604cf10c547a20b762909f4e7",
-    },
-    },
-  },
-  sepolia: {
-    MockWBTC: {
-      address: "0x01f0fe1fe348e56add1037ef026ed141a038294209104af59c0fbb398e469a29",
-      // ABI is the same as devnet - copy from lines 11-279
-      abi: [] as any, // Will be populated by scaffold-stark
-      classHash: "0x00ddb6d902dbd4b4f9d4d380a0fdb275a8dd4727b8303bb67ef2315e8aa142d1",
-    },
-    MockUSD: {
-      address: "0x076f5270bb50124f87f772a4af59ffd1331c915ccb6a44db9d57282f00eebcbf",
-      // ABI is the same as devnet - copy from lines 286-603
-      abi: [] as any, // Will be populated by scaffold-stark
-      classHash: "0x25d8f26fe4a5aac5c3e62106d07663b2d9728c31de9d15e5de3ad8e6a3a8c37",
-    },
-    BTCLending: {
-      address: "0x07c9bbcfbbc008e99d9f6dd4c15de43c45ad0a4262b7112e683592066118f9b0",
-      // ABI is the same as devnet - copy from lines 610-828
-      abi: [] as any, // Will be populated by scaffold-stark
-      classHash: "0x328bf75c76d0e1422555d2a40a42aaf05eb1d0604cf10c547a20b762909f4e7",
     },
   },
 } as const;
