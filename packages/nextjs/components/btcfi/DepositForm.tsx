@@ -66,7 +66,7 @@ export function DepositForm() {
       
       // Get BTCLending address from deployed contracts
       const deployedContracts = await import("~~/contracts/deployedContracts");
-      const btcLendingAddr = deployedContracts.default.devnet.BTCLending.address;
+      const btcLendingAddr = deployedContracts.default.sepolia.BTCLending.address;
 
       await approve({
         args: [btcLendingAddr, amountBigInt],
