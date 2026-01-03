@@ -15,7 +15,7 @@ export function ProtocolStats() {
   // Leer datos reales del contrato
   const { data: oraclePrice } = useScaffoldReadContract({
     contractName: "BTCLending",
-    functionName: "get_oracle_price",
+    functionName: "get_btc_price",
     args: [],
   });
 
@@ -37,10 +37,23 @@ export function ProtocolStats() {
     args: [],
   });
 
-  // Convertir valores
-  const btcPrice = oraclePrice ? Number(oraclePrice) / 10000000000000 : 0; // 13 decimals
+  // Convertir valores - Precio usa 8 decimals (como USD cents)
+  console.log('Oracle Price Raw:', oraclePrice);
+  
+  let btcPrice = 0;
+  if (oraclePrice) {
+    try {
+      // Intentar convertir directamente
+      const priceNum = Number(oraclePrice);
+      btcPrice = priceNum / 100000000; // 8 decimals (USD format)
+      console.log('BTC Price calculated:', btcPrice, 'from', priceNum);
+    } catch (e) {
+      console.error('Error converting price:', e);
+    }
+  }
+  
   const tvl = totalDeposits ? (Number(totalDeposits) / 100000000) * btcPrice : 0; // wBTC to USD
-  const borrowed = totalBorrowed ? Number(totalBorrowed) / 10000000000000 : 0; // 13 decimals
+  const borrowed = totalBorrowed ? Number(totalBorrowed) / 100000000 : 0; // 8 decimals (USD format)
   const users = activeUsers ? Number(activeUsers) : 0;
 
   return (
