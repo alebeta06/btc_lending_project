@@ -24,7 +24,7 @@ const Home = () => {
 
       {/* Oracle Price Section */}
       <div className="w-full max-w-7xl px-5 mt-8">
-        <SetOraclePriceForm />
+        {/* SetOraclePriceForm removed - using real Pragma Oracle */}
       </div>
 
       {/* Protocol Stats Section */}
