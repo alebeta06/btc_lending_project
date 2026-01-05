@@ -276,23 +276,36 @@ mod BTCLending {
             let health_factor = self.calculate_health_factor(user);
             assert(health_factor < 100, 'User is healthy');
 
-            // 2. Obtener datos del usuario
-            let debt = self.user_debt.read(user);
-            let collateral = self.user_collateral.read(user);
+            // Llamar directamente usando syscall (patrón oficial de Chainlink)
+            let mut calldata = ArrayTrait::new();
+            let result = starknet::syscalls::call_contract_syscall(
+                chainlink_feed, selector!("latest_round_data"), calldata.span(),
+            )
+                .unwrap();
 
-            let liquidator = get_caller_address();
+            // Deserializar manualmente los 5 felt252 retornados
+            // [round_id, answer, block_num, started_at, updated_at]
+            let round_id_felt = *result.at(0);
+            let answer_felt = *result.at(1);
+            let updated_at_felt = *result.at(4);
 
-            // 3. Transferir el colateral al liquidador
-            let token_dispatcher = IERC20Dispatcher { contract_address: self.wbtc_token.read() };
-            token_dispatcher.transfer(liquidator, collateral);
+            // Convertir felt252 a tipos específicos
+            let round_id: u128 = round_id_felt.try_into().unwrap();
+            let answer: u128 = answer_felt.try_into().unwrap();
+            let updated_at: u64 = updated_at_felt.try_into().unwrap();
 
-            // 4. Limpiar la posición del usuario
-            self.user_debt.write(user, 0);
-            self.user_collateral.write(user, 0);
+            // Validar que el precio sea válido
+            assert(answer > 0, 'Invalid price from Chainlink');
+            assert(round_id > 0, 'Invalid round data');
 
-            // 5. Actualizar estadísticas globales
-            let total_deposits = self.total_deposits.read();
-            self.total_deposits.write(total_deposits - collateral);
+            // Validar que el precio no sea muy antiguo (5 minutos = 300 segundos)
+            let current_time = starknet::get_block_timestamp();
+            let time_diff = current_time - updated_at;
+            assert(time_diff < 300, 'Price data is stale');
+
+            // Convertir u128 a u256 y retornar
+            // El precio ya viene con 8 decimales desde Chainlink
+            answer.into()
 
             let total_borrowed = self.total_borrowed.read();
             self.total_borrowed.write(total_borrowed - debt);
