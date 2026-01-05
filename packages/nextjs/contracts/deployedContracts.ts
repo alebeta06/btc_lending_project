@@ -606,7 +606,7 @@ const deployedContracts = {
     },
     BTCLending: {
       address:
-        "0x07c9bbcfbbc008e99d9f6dd4c15de43c45ad0a4262b7112e683592066118f9b0",
+        "0x07f804c5a82b21cb1bfff03cd6d07c976ce0b2fb62aa40b80aff2ad0a5b7cad5",
       abi: [
         {
           type: "impl",
