@@ -4,10 +4,13 @@
 // Este contrato permite a los usuarios depositar Bitcoin (wBTC) como colateral
 // y pedir prestado contra ese colateral. Incluye liquidaciones automáticas.
 
-// Pragma Oracle imports
+// Pragma Oracle Imports
 use starknet::ContractAddress;
+use pragma_lib::abi::{IPragmaABIDispatcher, IPragmaABIDispatcherTrait};
+use pragma_lib::types::{DataType, PragmaPricesResponse};
 
 pub mod mocks;
+
 
 // ============================================
 // INTERFAZ PÚBLICA DEL CONTRATO
@@ -61,7 +64,8 @@ mod BTCLending {
         Map, StorageMapReadAccess, StorageMapWriteAccess, StoragePointerReadAccess,
         StoragePointerWriteAccess,
     };
-    use starknet::{ContractAddress, get_caller_address, get_contract_address};
+    use starknet::{ContractAddress, get_caller_address, get_contract_address, SyscallResultTrait};
+    use super::{IPragmaABIDispatcher, IPragmaABIDispatcherTrait, DataType, PragmaPricesResponse};
 
     // ============================================
     // STORAGE - Almacenamiento Permanente
@@ -75,8 +79,7 @@ mod BTCLending {
         user_debt: Map<ContractAddress, u256>, // Deuda de cada usuario
         wbtc_token: ContractAddress, // Dirección del token wBTC
         liquidation_threshold: u256, // Umbral (8000 = 80%)
-        oracle_price: u256, // Precio BTC en USD (fallback)
-        pragma_oracle: ContractAddress // Dirección del contrato Pragma Oracle
+        pragma_oracle: ContractAddress // Dirección del Pragma Oracle
     }
 
     // ============================================
@@ -93,7 +96,6 @@ mod BTCLending {
     ) {
         self.wbtc_token.write(wbtc_token);
         self.liquidation_threshold.write(liquidation_threshold);
-        self.oracle_price.write(6000000000000); // Precio inicial: $60,000 (fallback)
         self.pragma_oracle.write(pragma_oracle);
     }
 
@@ -259,29 +261,51 @@ mod BTCLending {
         }
 
         // ============================================
-        // OBTENER PRECIO BTC DESDE PRAGMA ORACLE
+        // OBTENER PRECIO DE BTC DESDE CHAINLINK ORACLE
         // ============================================
+        // Lee el precio actual de BTC/USD desde Chainlink Data Feed
+        // Valida que el precio sea reciente (< 5 minutos)
+
         fn get_btc_price(self: @ContractState) -> u256 {
-            let oracle_address = self.pragma_oracle.read();
+            let pragma_oracle = self.pragma_oracle.read();
+            
+            // Verificar que el oracle esté configurado
             let zero_address: ContractAddress = starknet::contract_address_const::<0>();
-
-            // Si no hay oracle configurado, usar precio fallback
-            if oracle_address == zero_address {
-                return self.oracle_price.read();
-            }
-
-            // TODO: Integrar con Pragma Oracle cuando se tenga la dirección correcta
-            // Por ahora, siempre usar precio fallback
-            // En producción, aquí se llamaría al oracle con:
-            // let oracle_dispatcher = IPragmaABIDispatcher { contract_address: oracle_address };
-            // let price_data = oracle_dispatcher.get_data_median(DataType::SpotEntry('BTC/USD'));
-
-            self.oracle_price.read()
+            assert(pragma_oracle != zero_address, 'Pragma oracle not configured');
+            
+            // Crear dispatcher de Pragma
+            let oracle_dispatcher = IPragmaABIDispatcher { contract_address: pragma_oracle };
+            
+            // BTC/USD pair ID
+            let pair_id: felt252 = 'BTC/USD';
+            let data_type = DataType::SpotEntry(pair_id);
+            
+            // Obtener precio median de Pragma
+            let response: PragmaPricesResponse = oracle_dispatcher.get_data_median(data_type);
+            
+            // Validar que el precio sea válido
+            assert(response.price > 0, 'Invalid price from Pragma');
+            
+            // Validar freshness (5 minutos = 300 segundos)
+            let current_time = starknet::get_block_timestamp();
+            let time_diff = current_time - response.last_updated_timestamp;
+            assert(time_diff < 3600, 'Price data is stale');
+            
+            // Pragma retorna precio con decimals decimales
+            // Convertir a u256
+            response.price.into()
         }
 
-        fn set_oracle_price(ref self: ContractState, price: u256) {
-            // Actualizar precio fallback (útil para testing)
-            self.oracle_price.write(price);
+        // ============================================
+        // ACTUALIZAR PRECIO DEL ORÁCULO (DEPRECATED)
+        // ============================================
+        // Esta función ya no se usa con Chainlink
+        // Se mantiene por compatibilidad con la interfaz
+
+        fn set_oracle_price(
+            ref self: ContractState, price: u256,
+        ) { // No hace nada - Chainlink proporciona precios automáticamente
+        // Esta función se mantiene solo para compatibilidad con la interfaz IBTCLending
         }
     }
 }
