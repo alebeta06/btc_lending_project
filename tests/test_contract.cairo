@@ -33,9 +33,10 @@ fn deploy_lending_contract(wbtc_address: ContractAddress) -> ContractAddress {
     constructor_calldata.append(8000); // 80% umbral de liquidación
     constructor_calldata.append(0); // Parte alta del u256
 
-    // Dirección del Pragma Oracle (0 = usa fallback price)
-    let zero_address: ContractAddress = contract_address_const::<0>();
-    constructor_calldata.append(zero_address.into());
+    // Dirección del Chainlink BTC/USD Price Feed en Sepolia
+    // Para tests, usar dirección zero (el contrato fallará si se llama get_btc_price)
+    let chainlink_feed: ContractAddress = contract_address_const::<0>();
+    constructor_calldata.append(chainlink_feed.into());
 
     let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
     contract_address
