@@ -1,6 +1,7 @@
 "use client";
 
 import { useScaffoldReadContract } from "~~/hooks/scaffold-stark/useScaffoldReadContract";
+import { OraclePriceInfo } from "./OraclePriceInfo";
 
 /**
  * ProtocolStats Component
@@ -99,6 +100,11 @@ export function ProtocolStats() {
           <div className="stat-value text-2xl lg:text-4xl font-bold">{users}</div>
           <div className="stat-desc opacity-60">Unique users</div>
         </div>
+      </div>
+
+      {/* Oracle Price Warning */}
+      <div className="mt-6">
+        <OraclePriceInfo price={btcPrice.toLocaleString()} />
       </div>
 
       <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
