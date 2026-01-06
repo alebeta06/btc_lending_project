@@ -49,6 +49,11 @@ fn deploy_lending_contract(
     constructor_calldata.append(0); // 5. Pragma Oracle (0x0 para tests)
 
     let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
+
+    // IMPORTANTE: Configurar MockUSD para permitir que BTCLending mintee
+    let usd_dispatcher = IERC20MockUSDDispatcher { contract_address: usd_address };
+    usd_dispatcher.set_lending_contract(contract_address);
+
     contract_address
 }
 
@@ -199,9 +204,13 @@ fn test_borrow_fails_with_insufficient_collateral() {
 
     let user: ContractAddress = contract_address_const::<0xDEF>();
     let deposit_amount: u256 = 100_000_000; // 1 BTC
-    // Intentar pedir más del 80% del colateral (debería fallar)
-    // 1 BTC = $60k, 80% = $48k, pedimos $50k
-    let borrow_amount: u256 = 5000000000000;
+
+    // Establecer precio de BTC en $60k para el test
+    let lending_dispatcher = IBTCLendingDispatcher { contract_address: lending_address };
+    lending_dispatcher.set_oracle_price(6000000000000); // $60k con 8 decimals
+
+    // Con $60k, 80% = $48k, pedimos $50k (debería fallar)
+    let borrow_amount: u256 = 5000000000000; // $50k
 
     // Setup
     let wbtc_dispatcher = IERC20MockDispatcher { contract_address: wbtc_address };
@@ -212,10 +221,9 @@ fn test_borrow_fails_with_insufficient_collateral() {
     stop_cheat_caller_address(wbtc_address);
 
     start_cheat_caller_address(lending_address, user);
-    let lending_dispatcher = IBTCLendingDispatcher { contract_address: lending_address };
     lending_dispatcher.deposit_collateral(deposit_amount);
 
-    // Esto debería fallar
+    // Esto debería fallar porque HF < 100
     lending_dispatcher.borrow(borrow_amount);
     stop_cheat_caller_address(lending_address);
 }
@@ -338,7 +346,11 @@ fn test_health_factor_changes_with_price() {
 
     let user: ContractAddress = contract_address_const::<0x555>();
     let deposit_amount: u256 = 100_000_000; // 1 BTC
-    let borrow_amount: u256 = 4000000000000; // $40k
+    let borrow_amount: u256 = 4000000000000; // $40k (8 decimals)
+
+    let lending_dispatcher = IBTCLendingDispatcher { contract_address: lending_address };
+    // Establecer precio inicial en $60k
+    lending_dispatcher.set_oracle_price(6000000000000);
 
     // Setup
     let wbtc_dispatcher = IERC20MockDispatcher { contract_address: wbtc_address };
@@ -349,7 +361,6 @@ fn test_health_factor_changes_with_price() {
     stop_cheat_caller_address(wbtc_address);
 
     start_cheat_caller_address(lending_address, user);
-    let lending_dispatcher = IBTCLendingDispatcher { contract_address: lending_address };
     lending_dispatcher.deposit_collateral(deposit_amount);
     lending_dispatcher.borrow(borrow_amount);
     stop_cheat_caller_address(lending_address);
@@ -357,11 +368,11 @@ fn test_health_factor_changes_with_price() {
     // HF con BTC = $60k
     let hf_60k = lending_dispatcher.calculate_health_factor(user);
 
-    // Cambiar precio a $50k
+    // Cambiar precio a $50k (más bajo)
     lending_dispatcher.set_oracle_price(5000000000000);
     let hf_50k = lending_dispatcher.calculate_health_factor(user);
 
-    // Cambiar precio a $70k
+    // Cambiar precio a $70k (más alto)
     lending_dispatcher.set_oracle_price(7000000000000);
     let hf_70k = lending_dispatcher.calculate_health_factor(user);
 
