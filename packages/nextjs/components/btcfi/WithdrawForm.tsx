@@ -41,7 +41,7 @@ export function WithdrawForm() {
   // Leer precio de BTC desde el oracle
   const { data: btcPriceData } = useScaffoldReadContract({
     contractName: "BTCLending",
-    functionName: "get_btc_price",
+    functionName: "get_oracle_price",
     args: [],
   });
 
