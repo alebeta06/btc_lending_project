@@ -13,25 +13,20 @@ import { notification } from "~~/utils/scaffold-stark";
  * 
  * Steps:
  * 1. User enters amount of wBTC to deposit
- * 2. Approve BTCLending contract to spend wBTC
- * 3. Call deposit_collateral function
+ * 2. Approve BTCLending contract to spend wBTC (separate button)
+ * 3. Call deposit_collateral function (separate button)
  */
 export function DepositForm() {
   const { address } = useAccount();
   const [amount, setAmount] = useState("");
+  const [isApproved, setIsApproved] = useState(false);
   const [isApproving, setIsApproving] = useState(false);
+  const [isDepositing, setIsDepositing] = useState(false);
 
   // Get user's wBTC balance
   const { data: balance } = useScaffoldReadContract({
     contractName: "MockWBTC",
     functionName: "balance_of",
-    args: address ? [address] : undefined,
-  });
-
-  // Get BTCLending contract address from deployedContracts
-  const { data: btcLendingAddress } = useScaffoldReadContract({
-    contractName: "BTCLending",
-    functionName: "get_user_collateral", // Just to get the contract address
     args: address ? [address] : undefined,
   });
 
@@ -45,7 +40,7 @@ export function DepositForm() {
     functionName: "deposit_collateral",
   });
 
-  const handleDeposit = async () => {
+  const handleApprove = async () => {
     if (!address) {
       notification.error("Please connect your wallet");
       return;
@@ -57,36 +52,62 @@ export function DepositForm() {
     }
 
     try {
+      setIsApproving(true);
+      
       // Convert amount to BigInt (8 decimals for wBTC)
       const amountBigInt = BigInt(Math.floor(parseFloat(amount) * 100000000));
-
-      // Step 1: Approve
-      setIsApproving(true);
-      notification.info("Step 1/2: Approving wBTC...");
       
       // Get BTCLending address from deployed contracts
       const deployedContracts = await import("~~/contracts/deployedContracts");
       const btcLendingAddr = deployedContracts.default.sepolia.BTCLending.address;
 
+      notification.info("Approving wBTC...");
+      
       await approve({
         args: [btcLendingAddr, amountBigInt],
       });
 
-      notification.success("✅ Approval successful!");
+      notification.success("✅ Approval successful! Now click 'Deposit' button.");
+      setIsApproved(true);
+    } catch (error: any) {
+      console.error("Approve error:", error);
+      notification.error(`Approval failed: ${error.message || "Unknown error"}`);
+    } finally {
       setIsApproving(false);
+    }
+  };
 
-      // Step 2: Deposit
-      notification.info("Step 2/2: Depositing collateral...");
+  const handleDeposit = async () => {
+    if (!address) {
+      notification.error("Please connect your wallet");
+      return;
+    }
+
+    if (!isApproved) {
+      notification.error("Please approve first");
+      return;
+    }
+
+    try {
+      setIsDepositing(true);
+      
+      // Convert amount to BigInt (8 decimals for wBTC)
+      const amountBigInt = BigInt(Math.floor(parseFloat(amount) * 100000000));
+
+      notification.info("Depositing collateral...");
+      
       await deposit({
         args: [amountBigInt],
       });
 
       notification.success(`✅ Successfully deposited ${amount} wBTC!`);
       setAmount("");
+      setIsApproved(false);
     } catch (error: any) {
       console.error("Deposit error:", error);
-      notification.error(`Failed: ${error.message || "Unknown error"}`);
-      setIsApproving(false);
+      notification.error(`Deposit failed: ${error.message || "Unknown error"}`);
+    } finally {
+      setIsDepositing(false);
     }
   };
 
@@ -110,7 +131,10 @@ export function DepositForm() {
               placeholder="0.00000000"
               className="input input-bordered w-full"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setIsApproved(false); // Reset approval if amount changes
+              }}
               step="0.00000001"
               min="0"
             />
@@ -121,31 +145,50 @@ export function DepositForm() {
             </label>
           </div>
 
-          <div className="card-actions justify-end mt-4">
+          <div className="card-actions flex-col gap-2 mt-4">
+            {/* Step 1: Approve Button */}
             <button
-              className="btn btn-primary w-full"
-              onClick={handleDeposit}
-              disabled={!amount || parseFloat(amount) <= 0 || isApproving}
+              className={`btn w-full ${isApproved ? 'btn-success' : 'btn-secondary'}`}
+              onClick={handleApprove}
+              disabled={!amount || parseFloat(amount) <= 0 || isApproving || isApproved}
             >
               {isApproving ? (
                 <>
                   <span className="loading loading-spinner"></span>
                   Approving...
                 </>
+              ) : isApproved ? (
+                <>✅ Approved</>
               ) : (
-                "Deposit Collateral"
+                "1. Approve wBTC"
+              )}
+            </button>
+
+            {/* Step 2: Deposit Button */}
+            <button
+              className="btn btn-primary w-full"
+              onClick={handleDeposit}
+              disabled={!isApproved || isDepositing}
+            >
+              {isDepositing ? (
+                <>
+                  <span className="loading loading-spinner"></span>
+                  Depositing...
+                </>
+              ) : (
+                "2. Deposit Collateral"
               )}
             </button>
           </div>
 
-          <div className="alert alert-warning mt-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <div className="alert alert-info mt-4">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <div className="text-xs">
-              <p><strong>Note:</strong> This requires 2 transactions:</p>
-              <p>1. Approve wBTC spending</p>
-              <p>2. Deposit collateral</p>
+              <p><strong>Two-Step Process:</strong></p>
+              <p>1. Click &quot;Approve&quot; and confirm in wallet</p>
+              <p>2. Click &quot;Deposit&quot; and confirm in wallet</p>
             </div>
           </div>
         </>
