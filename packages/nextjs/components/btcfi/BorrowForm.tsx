@@ -44,7 +44,7 @@ export function BorrowForm() {
   // Get BTC price from oracle
   const { data: oraclePrice } = useScaffoldReadContract({
     contractName: "BTCLending",
-    functionName: "get_btc_price",
+    functionName: "get_oracle_price",
     args: [],
   });
 
@@ -73,7 +73,7 @@ export function BorrowForm() {
     try {
       // Convert amount to BigInt (8 decimals for USD debt - MUST match contract!)
       const amountFloat = parseFloat(amount);
-      const amountBigInt = BigInt(Math.floor(amountFloat * 100000000)); // 8 decimals
+      const amountBigInt = BigInt(Math.floor(amountFloat * 10000000000000)); // 13 decimals
 
       console.log("=== Borrow Debug Info ===");
       console.log("Amount (USD):", amountFloat);
@@ -119,12 +119,12 @@ export function BorrowForm() {
     }
   };
 
-  const collateralValue = collateral ? Number(collateral) / 100000000 : 0;
-  const debtValue = debt ? Number(debt) / 100000000 : 0; // 8 decimals for USD
+  const collateralValue = collateral ? Number(collateral) / 100000000 : 0; // wBTC: 8 decimals
+  const debtValue = debt ? Number(debt) / 10000000000000 : 0; // USD: 13 decimals (from contract)
   const hfValue = healthFactor ? Number(healthFactor) / 100 : 0; // Health Factor scaled by 100
 
-  // Get BTC price from oracle (with 8 decimals)
-  const btcPrice = oraclePrice ? Number(oraclePrice) / 100000000 : 0;
+  // Get BTC price from oracle (with 13 decimals)
+  const btcPrice = oraclePrice ? Number(oraclePrice) / 10000000000000 : 0; // Divide by 10^13
   
   // Calculate max borrow (80% LTV)
   const maxBorrow = Math.max(0, (collateralValue * btcPrice * 0.8) - debtValue);
