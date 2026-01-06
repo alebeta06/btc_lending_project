@@ -5,6 +5,7 @@
 // Usa Starknet Foundry (snforge) para testing
 
 use contracts::mocks::erc20_mock::{IERC20MockDispatcher, IERC20MockDispatcherTrait};
+use contracts::mocks::usd_mock::{IERC20MockUSDDispatcher, IERC20MockUSDDispatcherTrait};
 use contracts::{IBTCLendingDispatcher, IBTCLendingDispatcherTrait};
 use snforge_std::{
     ContractClassTrait, DeclareResultTrait, declare, start_cheat_caller_address,
@@ -23,15 +24,29 @@ fn deploy_mock_wbtc() -> ContractAddress {
     contract_address
 }
 
-// Despliega el contrato de lending con el wBTC mock
-fn deploy_lending_contract(wbtc_address: ContractAddress) -> ContractAddress {
+// Despliega el contrato mock de USD
+fn deploy_mock_usd() -> ContractAddress {
+    let contract = declare("MockUSD").unwrap().contract_class();
+    // MockUSD constructor requiere lending_contract address (usamos 0x0 por ahora)
+    let mut constructor_calldata = ArrayTrait::new();
+    constructor_calldata.append(0); // lending_contract = 0x0 inicialmente
+    let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
+    contract_address
+}
+
+// Despliega el contrato de lending con wBTC y MockUSD
+fn deploy_lending_contract(
+    wbtc_address: ContractAddress, usd_address: ContractAddress,
+) -> ContractAddress {
     let contract = declare("BTCLending").unwrap().contract_class();
 
-    // Preparar datos del constructor
+    // Preparar datos del constructor (4 parámetros ahora)
     let mut constructor_calldata = ArrayTrait::new();
-    constructor_calldata.append(wbtc_address.into()); // Dirección del wBTC
-    constructor_calldata.append(8000); // 80% umbral de liquidación
-    constructor_calldata.append(0); // Parte alta del u256
+    constructor_calldata.append(wbtc_address.into()); // 1. Dirección del wBTC
+    constructor_calldata.append(usd_address.into()); // 2. Dirección del MockUSD
+    constructor_calldata.append(8000); // 3. 80% umbral de liquidación (low)
+    constructor_calldata.append(0); // 4. Parte alta del u256 (high)
+    constructor_calldata.append(0); // 5. Pragma Oracle (0x0 para tests)
 
     let (contract_address, _) = contract.deploy(@constructor_calldata).unwrap();
     contract_address
@@ -47,7 +62,8 @@ fn deploy_lending_contract(wbtc_address: ContractAddress) -> ContractAddress {
 #[test]
 fn test_health_factor_no_debt() {
     let wbtc_address = deploy_mock_wbtc();
-    let lending_address = deploy_lending_contract(wbtc_address);
+    let usd_address = deploy_mock_usd();
+    let lending_address = deploy_lending_contract(wbtc_address, usd_address);
 
     let user: ContractAddress = contract_address_const::<0x123>();
 
@@ -66,7 +82,8 @@ fn test_health_factor_no_debt() {
 #[test]
 fn test_get_user_collateral_initial() {
     let wbtc_address = deploy_mock_wbtc();
-    let lending_address = deploy_lending_contract(wbtc_address);
+    let usd_address = deploy_mock_usd();
+    let lending_address = deploy_lending_contract(wbtc_address, usd_address);
 
     let user: ContractAddress = contract_address_const::<0x456>();
 
@@ -91,7 +108,8 @@ fn test_get_user_collateral_initial() {
 #[test]
 fn test_deposit_collateral_with_mock() {
     let wbtc_address = deploy_mock_wbtc();
-    let lending_address = deploy_lending_contract(wbtc_address);
+    let usd_address = deploy_mock_usd();
+    let lending_address = deploy_lending_contract(wbtc_address, usd_address);
 
     let user: ContractAddress = contract_address_const::<0x789>();
     let deposit_amount: u256 = 100_000_000; // 1 BTC (8 decimals)
@@ -132,7 +150,8 @@ fn test_deposit_collateral_with_mock() {
 #[test]
 fn test_borrow_with_sufficient_collateral() {
     let wbtc_address = deploy_mock_wbtc();
-    let lending_address = deploy_lending_contract(wbtc_address);
+    let usd_address = deploy_mock_usd();
+    let lending_address = deploy_lending_contract(wbtc_address, usd_address);
 
     let user: ContractAddress = contract_address_const::<0xABC>();
     let deposit_amount: u256 = 100_000_000; // 1 BTC
@@ -175,7 +194,8 @@ fn test_borrow_with_sufficient_collateral() {
 #[should_panic(expected: ('Health factor too low',))]
 fn test_borrow_fails_with_insufficient_collateral() {
     let wbtc_address = deploy_mock_wbtc();
-    let lending_address = deploy_lending_contract(wbtc_address);
+    let usd_address = deploy_mock_usd();
+    let lending_address = deploy_lending_contract(wbtc_address, usd_address);
 
     let user: ContractAddress = contract_address_const::<0xDEF>();
     let deposit_amount: u256 = 100_000_000; // 1 BTC
@@ -215,7 +235,8 @@ fn test_borrow_fails_with_insufficient_collateral() {
 #[test]
 fn test_liquidation_after_price_drop() {
     let wbtc_address = deploy_mock_wbtc();
-    let lending_address = deploy_lending_contract(wbtc_address);
+    let usd_address = deploy_mock_usd();
+    let lending_address = deploy_lending_contract(wbtc_address, usd_address);
 
     let user: ContractAddress = contract_address_const::<0x111>();
     let liquidator: ContractAddress = contract_address_const::<0x222>();
@@ -273,7 +294,8 @@ fn test_liquidation_after_price_drop() {
 #[should_panic(expected: ('User is healthy',))]
 fn test_cannot_liquidate_healthy_user() {
     let wbtc_address = deploy_mock_wbtc();
-    let lending_address = deploy_lending_contract(wbtc_address);
+    let usd_address = deploy_mock_usd();
+    let lending_address = deploy_lending_contract(wbtc_address, usd_address);
 
     let user: ContractAddress = contract_address_const::<0x333>();
     let liquidator: ContractAddress = contract_address_const::<0x444>();
@@ -311,7 +333,8 @@ fn test_cannot_liquidate_healthy_user() {
 #[test]
 fn test_health_factor_changes_with_price() {
     let wbtc_address = deploy_mock_wbtc();
-    let lending_address = deploy_lending_contract(wbtc_address);
+    let usd_address = deploy_mock_usd();
+    let lending_address = deploy_lending_contract(wbtc_address, usd_address);
 
     let user: ContractAddress = contract_address_const::<0x555>();
     let deposit_amount: u256 = 100_000_000; // 1 BTC
