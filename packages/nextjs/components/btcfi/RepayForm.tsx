@@ -56,7 +56,7 @@ export function RepayForm() {
       return;
     }
 
-    const debtValue = debt ? Number(debt) / 10000000000000 : 0; // 13 decimals
+    const debtValue = debt ? Number(debt) / 100000000 : 0; // 8 decimals for USD
     const amountFloat = parseFloat(amount);
 
     if (amountFloat > debtValue) {
@@ -65,12 +65,12 @@ export function RepayForm() {
     }
 
     try {
-      // Convert amount to BigInt (13 decimals for USD)
-      const amountBigInt = BigInt(Math.floor(amountFloat * 10000000000000));
+      // Convert amount to BigInt (8 decimals for USD - MUST match contract!)
+      const amountBigInt = BigInt(Math.floor(amountFloat * 100000000));
 
       console.log("=== Repay Debug Info ===");
       console.log("Amount (USD):", amountFloat);
-      console.log("Amount (BigInt):", amountBigInt.toString());
+      console.log("Amount (BigInt with 8 decimals):", amountBigInt.toString());
       console.log("Current Debt (USD):", debtValue);
       console.log("========================");
 
@@ -102,7 +102,8 @@ export function RepayForm() {
     }
   };
 
-  const debtValue = debt ? Number(debt) / 10000000000000 : 0;
+  // Calculate debt value for display (8 decimals for USD)
+  const debtValue = debt ? Number(debt) / 100000000 : 0;
 
   // Botones rápidos para pagar porcentajes de la deuda
   const quickRepayButtons = [
