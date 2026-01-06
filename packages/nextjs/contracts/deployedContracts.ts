@@ -606,7 +606,7 @@ const deployedContracts = {
     },
     BTCLending: {
       address:
-        "0x0791a290c5e8400a8a20acacff03a85d84641c3480f09d128ae5402cd1b86577",
+        "0x03e40fb08cb0a8f6c48615846ada6de5414f5eaf5de6a5976c711758f0bfb39d",
       abi: [
         {
           type: "impl",
@@ -753,6 +753,17 @@ const deployedContracts = {
             {
               type: "function",
               name: "get_total_deposits",
+              inputs: [],
+              outputs: [
+                {
+                  type: "core::integer::u256",
+                },
+              ],
+              state_mutability: "view",
+            },
+            {
+              type: "function",
+              name: "get_oracle_price",
               inputs: [],
               outputs: [
                 {
