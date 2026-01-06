@@ -41,6 +41,13 @@ export function BorrowForm() {
     args: address ? [address] : undefined,
   });
 
+  // Get BTC price from oracle
+  const { data: oraclePrice } = useScaffoldReadContract({
+    contractName: "BTCLending",
+    functionName: "get_btc_price",
+    args: [],
+  });
+
   const { sendAsync: borrow } = useScaffoldWriteContract({
     contractName: "BTCLending",
     functionName: "borrow",
@@ -64,13 +71,13 @@ export function BorrowForm() {
     }
 
     try {
-      // Convert amount to BigInt (13 decimals for USD debt)
+      // Convert amount to BigInt (8 decimals for USD debt - MUST match contract!)
       const amountFloat = parseFloat(amount);
-      const amountBigInt = BigInt(Math.floor(amountFloat * 10000000000000));
+      const amountBigInt = BigInt(Math.floor(amountFloat * 100000000)); // 8 decimals
 
       console.log("=== Borrow Debug Info ===");
       console.log("Amount (USD):", amountFloat);
-      console.log("Amount (BigInt):", amountBigInt.toString());
+      console.log("Amount (BigInt with 8 decimals):", amountBigInt.toString());
       console.log("Collateral (wBTC):", collateralValue);
       console.log("Current Debt (USD):", debtValue);
       console.log("Max Borrow (USD):", maxBorrow);
@@ -113,11 +120,13 @@ export function BorrowForm() {
   };
 
   const collateralValue = collateral ? Number(collateral) / 100000000 : 0;
-  const debtValue = debt ? Number(debt) / 10000000000000 : 0;
+  const debtValue = debt ? Number(debt) / 100000000 : 0; // 8 decimals for USD
   const hfValue = healthFactor ? Number(healthFactor) / 100 : 0; // Health Factor scaled by 100
 
-  // Calculate max borrow (assuming 80% LTV and BTC price of $100,000)
-  const btcPrice = 100000; // This should come from oracle
+  // Get BTC price from oracle (with 8 decimals)
+  const btcPrice = oraclePrice ? Number(oraclePrice) / 100000000 : 0;
+  
+  // Calculate max borrow (80% LTV)
   const maxBorrow = Math.max(0, (collateralValue * btcPrice * 0.8) - debtValue);
 
   // Botones rápidos para pedir prestado
