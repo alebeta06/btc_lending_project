@@ -95,6 +95,7 @@ mod BTCLending {
         StoragePointerWriteAccess,
     };
     use starknet::{ContractAddress, get_caller_address, get_contract_address};
+    use super::mocks::usd_mock::{IERC20MockUSDDispatcher, IERC20MockUSDDispatcherTrait};
     use super::{DataType, IPragmaABIDispatcher, IPragmaABIDispatcherTrait};
 
     // ============================================
@@ -185,15 +186,14 @@ mod BTCLending {
 
             // 3. MINTEAR MockUSD al usuario (CDP Model)
             // El protocolo crea nuevos tokens USD
-            let usd_dispatcher = IERC20Dispatcher { contract_address: self.usd_token.read() };
-            // Nota: Necesitamos una interfaz especial para mint
-            // Por ahora, MockUSD debe permitir que BTCLending mintee
+            let usd_dispatcher = IERC20MockUSDDispatcher {
+                contract_address: self.usd_token.read(),
+            };
+            usd_dispatcher.mint(caller, amount);
 
             // 4. Actualizar total_borrowed global
             let total = self.total_borrowed.read();
             self.total_borrowed.write(total + amount);
-            // NOTA: El minteo real se hace en MockUSD.mint(caller, amount)
-        // El contrato MockUSD debe tener una función mint() que solo BTCLending puede llamar
         }
 
         // ============================================
@@ -209,9 +209,10 @@ mod BTCLending {
 
             // 1. QUEMAR MockUSD del usuario (CDP Model)
             // El usuario devuelve los tokens y se destruyen
-            let usd_dispatcher = IERC20Dispatcher { contract_address: self.usd_token.read() };
-            // Nota: Necesitamos una interfaz especial para burn
-            // Por ahora, MockUSD debe permitir que BTCLending queme tokens del usuario
+            let usd_dispatcher = IERC20MockUSDDispatcher {
+                contract_address: self.usd_token.read(),
+            };
+            usd_dispatcher.burn(caller, amount);
 
             // 2. Actualizar deuda del usuario
             self.user_debt.write(caller, current_debt - amount);
@@ -219,8 +220,6 @@ mod BTCLending {
             // 3. Actualizar total_borrowed global
             let total = self.total_borrowed.read();
             self.total_borrowed.write(total - amount);
-            // NOTA: El quemado real se hace en MockUSD.burn(caller, amount)
-        // El contrato MockUSD debe tener una función burn() que solo BTCLending puede llamar
         }
 
         // ============================================
@@ -318,8 +317,8 @@ mod BTCLending {
                 return 999_999_999;
             }
 
-            // 1. Obtener precio de BTC
-            let btc_price = self.oracle_price.read();
+            // 1. Obtener precio de BTC del oráculo
+            let btc_price = self.get_oracle_price();
 
             // 2. Convertir colateral BTC a USD
             // Dividimos entre 10^8 porque BTC tiene 8 decimales
