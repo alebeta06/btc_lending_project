@@ -384,8 +384,7 @@ Este proyecto está bajo la licencia MIT. Ver [LICENSE](./LICENSE) para más det
 
 ## 📞 Contacto
 
-- **GitHub**: [@alebeta06](https://github.com/alebeta06)
-- **Proyecto**: [BTCFi Lending Protocol](https://github.com/alebeta06/btc_lending_project)
+- **Telegram**: [@Alebeta06](https://t.me/Alebeta06)
 
 ---
 
