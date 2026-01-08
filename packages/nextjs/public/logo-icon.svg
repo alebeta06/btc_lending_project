@@ -1,0 +1,40 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#5C5CEB;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F7931A;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#iconGrad)"/>
+  
+  <!-- Bitcoin B Symbol -->
+  <g transform="translate(32, 32)">
+    <!-- Top vertical line -->
+    <rect x="-2" y="-18" width="1.5" height="6" fill="#FFFFFF"/>
+    <rect x="0.5" y="-18" width="1.5" height="6" fill="#FFFFFF"/>
+    
+    <!-- Bottom vertical line -->
+    <rect x="-2" y="12" width="1.5" height="6" fill="#FFFFFF"/>
+    <rect x="0.5" y="12" width="1.5" height="6" fill="#FFFFFF"/>
+    
+    <!-- Top half of B -->
+    <path d="M-8,-12 L6,-12 Q12,-12 12,-6 Q12,0 6,0 L-8,0 Z" 
+          fill="#FFFFFF"/>
+    
+    <!-- Bottom half of B -->
+    <path d="M-8,0 L8,0 Q14,0 14,6 Q14,12 6,12 L-8,12 Z" 
+          fill="#FFFFFF"/>
+    
+    <!-- Vertical bar of B -->
+    <rect x="-10" y="-12" width="2" height="24" fill="#FFFFFF"/>
+  </g>
+  
+  <!-- Small lock accent -->
+  <g transform="translate(32, 48)">
+    <rect x="-3" y="0" width="6" height="4" rx="0.5" fill="#FFFFFF" opacity="0.8"/>
+    <path d="M-2,-2 Q-2,-4 0,-4 Q2,-4 2,-2" stroke="#FFFFFF" stroke-width="1" fill="none" opacity="0.8"/>
+  </g>
+</svg>
