@@ -21,14 +21,14 @@ export function WithdrawForm() {
   const { data: collateral } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "get_user_collateral",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   // Leer deuda del usuario
   const { data: debt } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "get_user_debt",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   // Leer Health Factor
@@ -48,7 +48,7 @@ export function WithdrawForm() {
   const { sendAsync: withdraw } = useScaffoldWriteContract({
     contractName: "BTCLending",
     functionName: "withdraw_collateral",
-    args: [0n], // Placeholder
+    args: [0], // Placeholder
   });
 
   const handleWithdraw = async () => {
