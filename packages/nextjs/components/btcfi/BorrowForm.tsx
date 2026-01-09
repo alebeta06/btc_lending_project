@@ -24,21 +24,21 @@ export function BorrowForm() {
   const { data: collateral } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "get_user_collateral",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   // Get user's current debt
   const { data: debt } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "get_user_debt",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   // Get health factor
   const { data: healthFactor } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "calculate_health_factor",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   // Get BTC price from oracle
@@ -51,6 +51,7 @@ export function BorrowForm() {
   const { sendAsync: borrow } = useScaffoldWriteContract({
     contractName: "BTCLending",
     functionName: "borrow",
+    args: [0],
   });
 
   const handleBorrow = async () => {
