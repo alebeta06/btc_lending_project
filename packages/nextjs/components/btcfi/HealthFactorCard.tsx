@@ -19,19 +19,19 @@ export function HealthFactorCard() {
   const { data: healthFactor, isLoading } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "calculate_health_factor",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   const { data: collateral } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "get_user_collateral",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   const { data: debt } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "get_user_debt",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   if (!address) {
