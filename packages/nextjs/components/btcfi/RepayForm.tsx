@@ -23,26 +23,26 @@ export function RepayForm() {
   const { data: debt } = useScaffoldReadContract({
     contractName: "BTCLending",
     functionName: "get_user_debt",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   // Leer balance de wBTC del usuario
   const { data: wbtcBalance } = useScaffoldReadContract({
     contractName: "MockWBTC",
     functionName: "balance_of",
-    args: address ? [address] : undefined,
+    args: [address],
   });
 
   const { sendAsync: approve } = useScaffoldWriteContract({
     contractName: "MockWBTC",
     functionName: "approve",
-    args: [0n, 0n], // Placeholder
+    args: ["0x0", 0], // Placeholder
   });
 
   const { sendAsync: repay } = useScaffoldWriteContract({
     contractName: "BTCLending",
     functionName: "repay",
-    args: [0n], // Placeholder
+    args: [0], // Placeholder
   });
 
   const handleRepay = async () => {
